@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberCell-24</title>
+    <style>
+        :root {
+            --bg-color: #101018;
+            --accent-green: #00FF41;
+            --text-light: #E0E0E0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            touch-action: none; /* Запобігає зуму на мобільних */
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        /* UI Оверлей */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Меню апгрейдів (Profile Card Style) */
+        #upgrade-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(16, 16, 24, 0.95);
+            border: 1px solid var(--accent-green);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            width: 300px;
+            pointer-events: auto;
+            display: none;
+            z-index: 100;
+        }
+
+        #upgrade-menu h2 {
+            color: var(--accent-green);
+            text-align: center;
+            margin-top: 0;
+            text-shadow: 0 0 5px var(--accent-green);
+        }
+
+        .upgrade-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+        }
+
+        button {
+            background: transparent;
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-shadow: 0 0 2px var(--accent-green);
+            box-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
+            transition: all 0.2s;
+        }
+
+        button:hover, button:active {
+            background: var(--accent-green);
+            color: var(--bg-color);
+        }
+
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            pointer-events: auto;
+        }
+
+        .hud-text {
+            color: var(--accent-green);
+            text-shadow: 0 0 3px var(--accent-green);
+            margin: 5px 0;
+        }
+
+        /* Віртуальне управління */
+        .mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 5px;
+            pointer-events: auto;
+        }
+
+        .d-btn {
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            user-select: none;
+        }
+        .d-btn:active { background: rgba(0, 255, 65, 0.4); }
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+        .d-down { grid-column: 2; grid-row: 3; }
+
+        .action-btns {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .fire-btn, .menu-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div class="hud-text">Quarks: <span id="quark-count">0</span></div>
+            <div class="hud-text">HP: <span id="hp-count">100</span></div>
+        </div>
+
+        <div id="upgrade-menu">
+            <h2>UPGRADES</h2>
+            <div class="upgrade-row">
+                <span>Speed</span>
+                <button onclick="buyUpgrade('speed')">10 Q</button>
+            </div>
+            <div class="upgrade-row">
+                <span>Fire Rate</span>
+                <button onclick="buyUpgrade('fireRate')">15 Q</button>
+            </div>
+            <div class="upgrade-row">
+                <span>Damage</span>
+                <button onclick="buyUpgrade('damage')">20 Q</button>
+            </div>
+            <div class="upgrade-row">
+                <span>Health+</span>
+                <button onclick="buyUpgrade('health')">25 Q</button>
+            </div>
+            <button onclick="toggleMenu()" style="width: 100%; margin-top: 10px;">Close</button>
+        </div>
+
+        <div class="mobile-controls">
+            <div class="d-pad">
+                <div class="d-btn d-up" id="btn-up">W</div>
+                <div class="d-btn d-left" id="btn-left">A</div>
+                <div class="d-btn d-right" id="btn-right">D</div>
+                <div class="d-btn d-down" id="btn-down">S</div>
+            </div>
+            <div class="action-btns">
+                <button class="menu-btn" onclick="toggleMenu()">MENU</button>
+                <button class="fire-btn" id="btn-fire">FIRE</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Твоя конфігурація Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8",
+            authDomain: "cybercell-24.firebaseapp.com",
+            databaseURL: "https://cybercell-24-default-rtdb.firebaseio.com",
+            projectId: "cybercell-24",
+            storageBucket: "cybercell-24.firebasestorage.app",
+            messagingSenderId: "1095428474585",
+            appId: "1:1095428474585:web:b5e1b5447656957c77a0c8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Налаштування Canvas та Сітки
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const GRID_SIZE = 24;
+        let CELL_SIZE = 0;
+
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth, window.innerHeight);
+            canvas.width = size;
+            canvas.height = size;
+            CELL_SIZE = canvas.width / GRID_SIZE;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Завантаження ассетів (як ти просив)
+        const assets = {
+            player: new Image(),
+            quark: new Image(),
+            bullet: new Image()
+        };
+        assets.player.crossOrigin = "Anonymous";
+        assets.player.src = "https://raw.githubusercontent.com/SimpleIcon/Simple-Icon/master/32x32/home.png";
+        
+        assets.quark.crossOrigin = "Anonymous";
+        assets.quark.src = "https://img.icons8.com/material-outlined/24/000000/atom.png";
+        
+        assets.bullet.crossOrigin = "Anonymous";
+        assets.bullet.src = "https://img.icons8.com/material-sharp/24/ffffff/circle.png";
+
+        // Локальний гравець
+        const playerId = "player_" + Math.random().toString(36).substr(2, 9);
+        let player = {
+            x: Math.floor(Math.random() * GRID_SIZE),
+            y: Math.floor(Math.random() * GRID_SIZE),
+            health: 100,
+            quarks: 0,
+            facing: 'up', // up, down, left, right
+            stats: { speedMs: 200, fireRateMs: 500, damage: 10 }
+        };
+
+        let lastMove = 0;
+        let lastShot = 0;
+
+        // Дані з мережі
+        const enemies = {};
+        const bullets = {};
+        const items = {};
+
+        // Синхронізація з Firebase
+        const playerRef = ref(db, `players/${playerId}`);
+        set(playerRef, player);
+        
+        // Відключення при закритті
+        window.addEventListener('beforeunload', () => remove(playerRef));
+
+        // Слухачі Firebase (Вороги)
+        onChildAdded(ref(db, 'players'), (snapshot) => {
+            if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val();
+        });
+        onChildChanged(ref(db, 'players'), (snapshot) => {
+            if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val();
+        });
+        onChildRemoved(ref(db, 'players'), (snapshot) => {
+            delete enemies[snapshot.key];
+        });
+
+        // Слухачі Firebase (Предмети/Кварки)
+        onChildAdded(ref(db, 'items'), (snapshot) => { items[snapshot.key] = snapshot.val(); });
+        onChildRemoved(ref(db, 'items'), (snapshot) => { delete items[snapshot.key]; });
+
+        // Слухачі Firebase (Кулі)
+        onChildAdded(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
+        onChildChanged(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
+        onChildRemoved(ref(db, 'bullets'), (snapshot) => { delete bullets[snapshot.key]; });
+
+        // Функція спавну Кварків (Тимчасово для тесту генерує локально, в ідеалі серверна логіка)
+        setInterval(() => {
+            const itemId = "item_" + Math.random().toString(36).substr(2, 9);
+            set(ref(db, `items/${itemId}`), {
+                x: Math.floor(Math.random() * GRID_SIZE),
+                y: Math.floor(Math.random() * GRID_SIZE),
+                type: 'quark'
+            });
+        }, 5000);
+
+        // Управління
+        const keys = { w: false, a: false, s: false, d: false, space: false };
+        
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
+            if(e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
+            if(e.key === 's' || e.key === 'ArrowDown') keys.s = true;
+            if(e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
+            if(e.key === ' ') keys.space = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if(e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
+            if(e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
+            if(e.key === 's' || e.key === 'ArrowDown') keys.s = false;
+            if(e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
+            if(e.key === ' ') keys.space = false;
+        });
+
+        // Мобільне управління
+        const bindBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+        bindBtn('btn-up', 'w');
+        bindBtn('btn-down', 's');
+        bindBtn('btn-left', 'a');
+        bindBtn('btn-right', 'd');
+        bindBtn('btn-fire', 'space');
+
+        // Ігрова логіка
+        function updateGame() {
+            const now = Date.now();
+
+            // Рух по сітці (з затримкою для імітації швидкості)
+            if (now - lastMove > player.stats.speedMs) {
+                let moved = false;
+                if (keys.w && player.y > 0) { player.y--; player.facing = 'up'; moved = true; }
+                else if (keys.s && player.y < GRID_SIZE - 1) { player.y++; player.facing = 'down'; moved = true; }
+                else if (keys.a && player.x > 0) { player.x--; player.facing = 'left'; moved = true; }
+                else if (keys.d && player.x < GRID_SIZE - 1) { player.x++; player.facing = 'right'; moved = true; }
+
+                if (moved) {
+                    lastMove = now;
+                    // Перевірка збору кварків
+                    for (const id in items) {
+                        if (items[id].x === player.x && items[id].y === player.y) {
+                            player.quarks += 1;
+                            document.getElementById('quark-count').innerText = player.quarks;
+                            remove(ref(db, `items/${id}`)); // Видаляємо з БД
+                        }
+                    }
+                    update(playerRef, { x: player.x, y: player.y, facing: player.facing });
+                }
+            }
+
+            // Стрільба
+            if (keys.space && now - lastShot > player.stats.fireRateMs) {
+                lastShot = now;
+                const bulletId = "b_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+                const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing, damage: player.stats.damage };
+                set(ref(db, `bullets/${bulletId}`), bulletData);
+                
+                // Проста логіка польоту кулі (оновлюється тим, хто вистрілив)
+                let bx = player.x;
+                let by = player.y;
+                const bInterval = setInterval(() => {
+                    if (bulletData.dir === 'up') by--;
+                    if (bulletData.dir === 'down') by++;
+                    if (bulletData.dir === 'left') bx--;
+                    if (bulletData.dir === 'right') bx++;
+
+                    if (bx < 0 || bx >= GRID_SIZE || by < 0 || by >= GRID_SIZE) {
+                        clearInterval(bInterval);
+                        remove(ref(db, `bullets/${bulletId}`));
+                    } else {
+                        update(ref(db, `bullets/${bulletId}`), { x: bx, y: by });
+                    }
+                }, 100); // Швидкість кулі (можна зробити апгрейдом)
+            }
+        }
+
+        // Рендер
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Малюємо сітку (ледь помітна)
+            ctx.strokeStyle = "rgba(0, 255, 65, 0.05)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            // Малюємо Кварки
+            for (const id in items) {
+                const item = items[id];
+                ctx.save();
+                ctx.filter = "invert(50%) sepia(100%) saturate(500%) hue-rotate(80deg) brightness(150%) drop-shadow(0 0 5px #00FF41)";
+                ctx.drawImage(assets.quark, item.x * CELL_SIZE + CELL_SIZE*0.1, item.y * CELL_SIZE + CELL_SIZE*0.1, CELL_SIZE*0.8, CELL_SIZE*0.8);
+                ctx.restore();
+            }
+
+            // Малюємо Ворогів
+            for (const id in enemies) {
+                const enemy = enemies[id];
+                ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Червоний для ворогів, щоб відрізнити
+                ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+
+            // Малюємо Гравця (Неоново-зелений)
+            ctx.fillStyle = "rgba(0, 255, 65, 0.2)";
+            ctx.fillRect(player.x * CELL_SIZE, player.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            ctx.save();
+            ctx.filter = "invert(50%) sepia(100%) saturate(500%) hue-rotate(80deg) brightness(200%) drop-shadow(0 0 5px #00FF41)";
+            ctx.drawImage(assets.player, player.x * CELL_SIZE, player.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            ctx.restore();
+
+            // Малюємо Кулі
+            for (const id in bullets) {
+                const b = bullets[id];
+                ctx.save();
+                ctx.filter = "drop-shadow(0 0 8px #00FF41)";
+                ctx.drawImage(assets.bullet, b.x * CELL_SIZE + CELL_SIZE*0.25, b.y * CELL_SIZE + CELL_SIZE*0.25, CELL_SIZE*0.5, CELL_SIZE*0.5);
+                ctx.restore();
+            }
+        }
+
+        // Ігровий цикл
+        function gameLoop() {
+            updateGame();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Глобальні функції для UI
+        window.toggleMenu = () => {
+            const menu = document.getElementById('upgrade-menu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        };
+
+        window.buyUpgrade = (type) => {
+            let cost = 0;
+            if (type === 'speed') cost = 10;
+            if (type === 'fireRate') cost = 15;
+            if (type === 'damage') cost = 20;
+            if (type === 'health') cost = 25;
+
+            if (player.quarks >= cost) {
+                player.quarks -= cost;
+                if (type === 'speed') player.stats.speedMs = Math.max(50, player.stats.speedMs - 20);
+                if (type === 'fireRate') player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 50);
+                if (type === 'damage') player.stats.damage += 5;
+                if (type === 'health') { player.health += 20; document.getElementById('hp-count').innerText = player.health; }
+                
+                document.getElementById('quark-count').innerText = player.quarks;
+                update(playerRef, { stats: player.stats, health: player.health, quarks: player.quarks });
+            } else {
+                alert("Недостатньо Кварків!");
+            }
+        };
+
+        // Запуск
+        gameLoop();
+    </script>
+</body>
+</html>
