@@ -20,7 +20,7 @@
             color: var(--text-light);
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
-            touch-action: none; /* Запобігає зуму на мобільних */
+            touch-action: none;
         }
 
         #gameCanvas {
@@ -30,7 +30,6 @@
             box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
         }
 
-        /* UI Оверлей */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -40,7 +39,6 @@
             pointer-events: none;
         }
 
-        /* Меню апгрейдів (Profile Card Style) */
         #upgrade-menu {
             position: absolute;
             top: 50%;
@@ -104,7 +102,6 @@
             margin: 5px 0;
         }
 
-        /* Віртуальне управління */
         .mobile-controls {
             position: absolute;
             bottom: 30px;
@@ -133,6 +130,7 @@
             align-items: center;
             font-weight: bold;
             user-select: none;
+            cursor: pointer;
         }
         .d-btn:active { background: rgba(0, 255, 65, 0.4); }
         .d-up { grid-column: 2; grid-row: 1; }
@@ -155,6 +153,7 @@
             justify-content: center;
             align-items: center;
             font-size: 12px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -205,9 +204,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, set, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Твоя конфігурація Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8",
             authDomain: "cybercell-24.firebaseapp.com",
@@ -221,7 +219,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Налаштування Canvas та Сітки
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const GRID_SIZE = 24;
@@ -236,68 +233,38 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Завантаження ассетів (як ти просив)
-        const assets = {
-            player: new Image(),
-            quark: new Image(),
-            bullet: new Image()
-        };
-        assets.player.crossOrigin = "Anonymous";
-        assets.player.src = "https://raw.githubusercontent.com/SimpleIcon/Simple-Icon/master/32x32/home.png";
-        
-        assets.quark.crossOrigin = "Anonymous";
-        assets.quark.src = "https://img.icons8.com/material-outlined/24/000000/atom.png";
-        
-        assets.bullet.crossOrigin = "Anonymous";
-        assets.bullet.src = "https://img.icons8.com/material-sharp/24/ffffff/circle.png";
-
-        // Локальний гравець
         const playerId = "player_" + Math.random().toString(36).substr(2, 9);
         let player = {
             x: Math.floor(Math.random() * GRID_SIZE),
             y: Math.floor(Math.random() * GRID_SIZE),
             health: 100,
             quarks: 0,
-            facing: 'up', // up, down, left, right
+            facing: 'up', 
             stats: { speedMs: 200, fireRateMs: 500, damage: 10 }
         };
 
         let lastMove = 0;
         let lastShot = 0;
 
-        // Дані з мережі
         const enemies = {};
         const bullets = {};
         const items = {};
 
-        // Синхронізація з Firebase
         const playerRef = ref(db, `players/${playerId}`);
         set(playerRef, player);
-        
-        // Відключення при закритті
         window.addEventListener('beforeunload', () => remove(playerRef));
 
-        // Слухачі Firebase (Вороги)
-        onChildAdded(ref(db, 'players'), (snapshot) => {
-            if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val();
-        });
-        onChildChanged(ref(db, 'players'), (snapshot) => {
-            if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val();
-        });
-        onChildRemoved(ref(db, 'players'), (snapshot) => {
-            delete enemies[snapshot.key];
-        });
+        onChildAdded(ref(db, 'players'), (snapshot) => { if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val(); });
+        onChildChanged(ref(db, 'players'), (snapshot) => { if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val(); });
+        onChildRemoved(ref(db, 'players'), (snapshot) => { delete enemies[snapshot.key]; });
 
-        // Слухачі Firebase (Предмети/Кварки)
         onChildAdded(ref(db, 'items'), (snapshot) => { items[snapshot.key] = snapshot.val(); });
         onChildRemoved(ref(db, 'items'), (snapshot) => { delete items[snapshot.key]; });
 
-        // Слухачі Firebase (Кулі)
         onChildAdded(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
         onChildChanged(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
         onChildRemoved(ref(db, 'bullets'), (snapshot) => { delete bullets[snapshot.key]; });
 
-        // Функція спавну Кварків (Тимчасово для тесту генерує локально, в ідеалі серверна логіка)
         setInterval(() => {
             const itemId = "item_" + Math.random().toString(36).substr(2, 9);
             set(ref(db, `items/${itemId}`), {
@@ -307,10 +274,9 @@
             });
         }, 5000);
 
-// Управління
+        // Управління (виправлене)
         const keys = { w: false, a: false, s: false, d: false, space: false };
         
-        // Використовуємо e.code, щоб гра реагувала на фізичні клавіші незалежно від мови розкладки (Укр/Англ)
         window.addEventListener('keydown', (e) => {
             if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = true;
             if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = true;
@@ -327,15 +293,10 @@
             if(e.code === 'Space') keys.space = false;
         });
 
-        // Мобільне управління + Підтримка кліків мишкою для тестування на ПК
         const bindBtn = (id, key) => {
             const btn = document.getElementById(id);
-            
-            // Для сенсорних екранів
             btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
             btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
-            
-            // Для мишки на комп'ютері
             btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
             btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
             btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
@@ -346,23 +307,10 @@
         bindBtn('btn-left', 'a');
         bindBtn('btn-right', 'd');
         bindBtn('btn-fire', 'space');
-        // Мобільне управління
-        const bindBtn = (id, key) => {
-            const btn = document.getElementById(id);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-        };
-        bindBtn('btn-up', 'w');
-        bindBtn('btn-down', 's');
-        bindBtn('btn-left', 'a');
-        bindBtn('btn-right', 'd');
-        bindBtn('btn-fire', 'space');
 
-        // Ігрова логіка
         function updateGame() {
             const now = Date.now();
 
-            // Рух по сітці (з затримкою для імітації швидкості)
             if (now - lastMove > player.stats.speedMs) {
                 let moved = false;
                 if (keys.w && player.y > 0) { player.y--; player.facing = 'up'; moved = true; }
@@ -372,26 +320,23 @@
 
                 if (moved) {
                     lastMove = now;
-                    // Перевірка збору кварків
                     for (const id in items) {
                         if (items[id].x === player.x && items[id].y === player.y) {
                             player.quarks += 1;
                             document.getElementById('quark-count').innerText = player.quarks;
-                            remove(ref(db, `items/${id}`)); // Видаляємо з БД
+                            remove(ref(db, `items/${id}`)); 
                         }
                     }
                     update(playerRef, { x: player.x, y: player.y, facing: player.facing });
                 }
             }
 
-            // Стрільба
             if (keys.space && now - lastShot > player.stats.fireRateMs) {
                 lastShot = now;
                 const bulletId = "b_" + Date.now() + "_" + Math.floor(Math.random()*1000);
                 const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing, damage: player.stats.damage };
                 set(ref(db, `bullets/${bulletId}`), bulletData);
                 
-                // Проста логіка польоту кулі (оновлюється тим, хто вистрілив)
                 let bx = player.x;
                 let by = player.y;
                 const bInterval = setInterval(() => {
@@ -406,15 +351,15 @@
                     } else {
                         update(ref(db, `bullets/${bulletId}`), { x: bx, y: by });
                     }
-                }, 100); // Швидкість кулі (можна зробити апгрейдом)
+                }, 100); 
             }
         }
 
-        // Рендер
+        // Оновлений Рендер (векторна графіка)
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Малюємо сітку (ледь помітна)
+            // Сітка
             ctx.strokeStyle = "rgba(0, 255, 65, 0.05)";
             ctx.lineWidth = 1;
             for (let i = 0; i <= GRID_SIZE; i++) {
@@ -428,48 +373,66 @@
                 ctx.stroke();
             }
 
-            // Малюємо Кварки
+            // Кварки
             for (const id in items) {
                 const item = items[id];
-                ctx.save();
-                ctx.filter = "invert(50%) sepia(100%) saturate(500%) hue-rotate(80deg) brightness(150%) drop-shadow(0 0 5px #00FF41)";
-                ctx.drawImage(assets.quark, item.x * CELL_SIZE + CELL_SIZE*0.1, item.y * CELL_SIZE + CELL_SIZE*0.1, CELL_SIZE*0.8, CELL_SIZE*0.8);
-                ctx.restore();
+                const cx = item.x * CELL_SIZE + CELL_SIZE / 2;
+                const cy = item.y * CELL_SIZE + CELL_SIZE / 2;
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, CELL_SIZE * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = "#00FF41";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#00FF41";
+                ctx.fill();
+                ctx.shadowBlur = 0; 
             }
 
-            // Малюємо Ворогів
+            // Вороги
             for (const id in enemies) {
                 const enemy = enemies[id];
-                ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Червоний для ворогів, щоб відрізнити
-                ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "red";
+                ctx.fillRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.shadowBlur = 0;
             }
 
-            // Малюємо Гравця (Неоново-зелений)
+            // Гравець
             ctx.fillStyle = "rgba(0, 255, 65, 0.2)";
-            ctx.fillRect(player.x * CELL_SIZE, player.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            ctx.save();
-            ctx.filter = "invert(50%) sepia(100%) saturate(500%) hue-rotate(80deg) brightness(200%) drop-shadow(0 0 5px #00FF41)";
-            ctx.drawImage(assets.player, player.x * CELL_SIZE, player.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            ctx.restore();
+            ctx.strokeStyle = "#00FF41";
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00FF41";
+            ctx.fillRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            ctx.strokeRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            
+            ctx.fillStyle = "#00FF41";
+            ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
+            ctx.shadowBlur = 0;
 
-            // Малюємо Кулі
+            // Кулі
             for (const id in bullets) {
                 const b = bullets[id];
-                ctx.save();
-                ctx.filter = "drop-shadow(0 0 8px #00FF41)";
-                ctx.drawImage(assets.bullet, b.x * CELL_SIZE + CELL_SIZE*0.25, b.y * CELL_SIZE + CELL_SIZE*0.25, CELL_SIZE*0.5, CELL_SIZE*0.5);
-                ctx.restore();
+                const cx = b.x * CELL_SIZE + CELL_SIZE / 2;
+                const cy = b.y * CELL_SIZE + CELL_SIZE / 2;
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#00FF41";
+                ctx.fill();
+                ctx.shadowBlur = 0;
             }
         }
 
-        // Ігровий цикл
         function gameLoop() {
             updateGame();
             draw();
             requestAnimationFrame(gameLoop);
         }
 
-        // Глобальні функції для UI
         window.toggleMenu = () => {
             const menu = document.getElementById('upgrade-menu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
@@ -496,7 +459,6 @@
             }
         };
 
-        // Запуск
         gameLoop();
     </script>
 </body>
