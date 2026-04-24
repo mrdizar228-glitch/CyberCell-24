@@ -3,190 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CyberCell-24</title>
+    <title>CyberCell-24: Battle Royale</title>
     <style>
         :root {
             --bg-color: #101018;
             --accent-green: #00FF41;
+            --accent-red: #FF003C;
+            --accent-yellow: #FCE803;
             --text-light: #E0E0E0;
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            color: var(--text-light);
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            touch-action: none;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-light);
+            font-family: 'Courier New', Courier, monospace; overflow: hidden; touch-action: none;
         }
 
         #gameCanvas {
-            display: block;
-            margin: 0 auto;
-            background-color: var(--bg-color);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+            display: none; /* Сховано доки не зайдемо в лобі */
+            margin: 0 auto; background-color: var(--bg-color); box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
         }
 
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+        /* ----- СИСТЕМА СПОВІЩЕНЬ (НЕОНОВІ TOASTS) ----- */
+        #toast-container {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none;
         }
-
-        #upgrade-menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(16, 16, 24, 0.95);
-            border: 1px solid var(--accent-green);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
-            border-radius: 8px;
-            padding: 20px;
-            width: 300px;
-            pointer-events: auto;
-            display: none;
-            z-index: 100;
+        .neon-toast {
+            padding: 10px 20px; border-radius: 4px; font-weight: bold; text-align: center;
+            background: rgba(16, 16, 24, 0.9); text-shadow: 0 0 5px; opacity: 1; transition: opacity 0.3s;
         }
+        .toast-green { color: var(--accent-green); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.5); }
+        .toast-yellow { color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 0 0 15px rgba(252, 232, 3, 0.5); }
+        .toast-red { color: var(--accent-red); border: 1px solid var(--accent-red); box-shadow: 0 0 15px rgba(255, 0, 60, 0.5); }
 
-        #upgrade-menu h2 {
-            color: var(--accent-green);
-            text-align: center;
-            margin-top: 0;
-            text-shadow: 0 0 5px var(--accent-green);
+        /* ----- ЛОБІ МЕНЮ ----- */
+        #lobby-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); display: flex; flex-direction: column; align-items: center; padding-top: 50px; z-index: 1000;
         }
-
-        .upgrade-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 5px;
+        #lobby-screen h1 { color: var(--accent-green); text-shadow: 0 0 10px var(--accent-green); }
+        .lobby-box {
+            width: 90%; max-width: 400px; border: 1px solid var(--accent-green); padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); border-radius: 8px; margin-bottom: 20px;
         }
-
+        .lobby-list { max-height: 200px; overflow-y: auto; margin-top: 10px; border-top: 1px solid rgba(0, 255, 65, 0.3); padding-top: 10px;}
+        .lobby-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
         button {
-            background: transparent;
-            color: var(--accent-green);
-            border: 1px solid var(--accent-green);
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 4px;
-            text-shadow: 0 0 2px var(--accent-green);
-            box-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
-            transition: all 0.2s;
+            background: transparent; color: var(--accent-green); border: 1px solid var(--accent-green);
+            padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;
+            text-shadow: 0 0 2px var(--accent-green); box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); transition: 0.2s;
         }
+        button:hover { background: var(--accent-green); color: var(--bg-color); }
+        button.red-btn { color: var(--accent-red); border-color: var(--accent-red); box-shadow: 0 0 5px rgba(255, 0, 60, 0.2); text-shadow: none;}
+        button.red-btn:hover { background: var(--accent-red); color: white; }
 
-        button:hover, button:active {
-            background: var(--accent-green);
-            color: var(--bg-color);
-        }
-
-        #hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 18px;
-            pointer-events: auto;
-        }
-
-        .hud-text {
-            color: var(--accent-green);
-            text-shadow: 0 0 3px var(--accent-green);
-            margin: 5px 0;
-        }
-
+        /* ----- ІГРОВИЙ UI ----- */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+        #hud { position: absolute; top: 10px; left: 10px; font-size: 18px; pointer-events: auto; }
+        .hud-text { color: var(--accent-green); text-shadow: 0 0 3px var(--accent-green); margin: 5px 0; }
         .mobile-controls {
-            position: absolute;
-            bottom: 30px;
-            width: 100%;
-            pointer-events: none;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 30px;
-            box-sizing: border-box;
+            position: absolute; bottom: 30px; width: 100%; pointer-events: none;
+            display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box;
         }
-
-        .d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(3, 50px);
-            gap: 5px;
-            pointer-events: auto;
-        }
-
-        .d-btn {
-            background: rgba(0, 255, 65, 0.1);
-            border: 1px solid var(--accent-green);
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            user-select: none;
-            cursor: pointer;
-        }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; pointer-events: auto; }
+        .d-btn { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--accent-green); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; cursor: pointer; }
         .d-btn:active { background: rgba(0, 255, 65, 0.4); }
-        .d-up { grid-column: 2; grid-row: 1; }
-        .d-left { grid-column: 1; grid-row: 2; }
-        .d-right { grid-column: 3; grid-row: 2; }
-        .d-down { grid-column: 2; grid-row: 3; }
-
-        .action-btns {
-            display: flex;
-            align-items: flex-end;
-            gap: 15px;
-            pointer-events: auto;
-        }
-
-        .fire-btn, .menu-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
+        .d-up { grid-column: 2; grid-row: 1; } .d-left { grid-column: 1; grid-row: 2; } .d-right { grid-column: 3; grid-row: 2; } .d-down { grid-column: 2; grid-row: 3; }
+        .action-btns { display: flex; align-items: flex-end; gap: 15px; pointer-events: auto; }
+        .fire-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,0,60,0.1); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .fire-btn:active { background: rgba(255,0,60,0.4); }
+        
+        #leave-btn { position: absolute; top: 10px; right: 10px; pointer-events: auto;}
     </style>
 </head>
 <body>
+
+    <div id="toast-container"></div>
+
+    <div id="lobby-screen">
+        <h1>CYBERCELL BATTLE ROYALE</h1>
+        
+        <div class="lobby-box">
+            <h3>Створити свою арену</h3>
+            <input type="text" id="new-lobby-name" placeholder="Назва кімнати..." style="width: 100%; padding: 8px; margin-bottom: 10px; background: #222; color: white; border: 1px solid gray;">
+            <button onclick="createNewLobby()" style="width: 100%;">СТВОРИТИ ЛОБІ</button>
+        </div>
+
+        <div class="lobby-box">
+            <h3>Доступні Арени</h3>
+            <div class="lobby-list" id="active-lobbies">
+                <p style="color: gray; text-align: center;">Шукаю кімнати...</p>
+            </div>
+        </div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="ui-layer">
         <div id="hud">
-            <div class="hud-text">Quarks: <span id="quark-count">0</span></div>
+            <div class="hud-text">Room: <span id="current-room-name"></span></div>
             <div class="hud-text">HP: <span id="hp-count">100</span></div>
         </div>
-
-        <div id="upgrade-menu">
-            <h2>UPGRADES</h2>
-            <div class="upgrade-row">
-                <span>Speed</span>
-                <button onclick="buyUpgrade('speed')">10 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Fire Rate</span>
-                <button onclick="buyUpgrade('fireRate')">15 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Damage</span>
-                <button onclick="buyUpgrade('damage')">20 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Health+</span>
-                <button onclick="buyUpgrade('health')">25 Q</button>
-            </div>
-            <button onclick="toggleMenu()" style="width: 100%; margin-top: 10px;">Close</button>
-        </div>
+        <button id="leave-btn" class="red-btn" onclick="leaveGame()">ВИЙТИ</button>
 
         <div class="mobile-controls">
             <div class="d-pad">
@@ -196,7 +118,6 @@
                 <div class="d-btn d-down" id="btn-down">S</div>
             </div>
             <div class="action-btns">
-                <button class="menu-btn" onclick="toggleMenu()">MENU</button>
                 <button class="fire-btn" id="btn-fire">FIRE</button>
             </div>
         </div>
@@ -204,7 +125,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8",
@@ -219,64 +140,192 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        // --- ГЛОБАЛЬНІ ЗМІННІ ---
+        let currentLobbyId = null;
+        let isPlaying = false;
+        let animationFrameId;
         const GRID_SIZE = 24;
         let CELL_SIZE = 0;
+        
+        // Зробимо короткий ID гравця, щоб гарно виглядало над кубиком
+        const shortPlayerId = "User_" + Math.floor(Math.random() * 9999);
+        const playerId = "player_" + Math.random().toString(36).substr(2, 9);
+        
+        let player = {
+            name: shortPlayerId,
+            x: 0, y: 0,
+            health: 100,
+            facing: 'up',
+            alive: true,
+            color: '#00FF41' // Ми зелені
+        };
 
+        let lastMove = 0;
+        let lastShot = 0;
+
+        let enemies = {};
+        let bullets = {};
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- СИСТЕМА НЕОНОВИХ СПОВІЩЕНЬ ---
+        window.showNeonToast = (message, type = 'green') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `neon-toast toast-${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            // Зникає через 3 секунди
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // --- ЛОБІ МЕНЕДЖЕР ---
+        const lobbiesRef = ref(db, 'lobbies');
+        onValue(lobbiesRef, (snapshot) => {
+            const lobbies = snapshot.val();
+            const listDiv = document.getElementById('active-lobbies');
+            listDiv.innerHTML = '';
+
+            if (!lobbies) {
+                listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає активних кімнат. Створи першу!</p>';
+                return;
+            }
+
+            for (const [id, data] of Object.entries(lobbies)) {
+                // Рахуємо скільки живих гравців
+                let playerCount = data.players ? Object.keys(data.players).length : 0;
+                
+                const item = document.createElement('div');
+                item.className = 'lobby-item';
+                item.innerHTML = `
+                    <span>${data.name} (Гравців: ${playerCount})</span>
+                    <button onclick="joinLobby('${id}', '${data.name}')">ВВІЙТИ</button>
+                `;
+                listDiv.appendChild(item);
+            }
+        });
+
+        window.createNewLobby = () => {
+            const nameInput = document.getElementById('new-lobby-name').value || "Арена " + Math.floor(Math.random()*100);
+            const newLobbyRef = push(ref(db, 'lobbies'));
+            set(newLobbyRef, { name: nameInput, created: Date.now() }).then(() => {
+                window.showNeonToast(`Лобі "${nameInput}" створено!`, 'green');
+            });
+        };
+
+        window.joinLobby = (lobbyId, lobbyName) => {
+            currentLobbyId = lobbyId;
+            document.getElementById('lobby-screen').style.display = 'none';
+            canvas.style.display = 'block';
+            document.getElementById('ui-layer').style.display = 'block';
+            document.getElementById('current-room-name').innerText = lobbyName;
+            
+            startGame();
+        };
+
+        window.leaveGame = () => {
+            if (currentLobbyId) {
+                remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
+            }
+            location.reload(); // Найшвидший спосіб очистити стан і повернутись в меню
+        };
+
+        window.addEventListener('beforeunload', () => {
+            if (currentLobbyId && isPlaying) remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
+        });
+
+        // --- ІГРОВИЙ РУШІЙ ---
         function resizeCanvas() {
             const size = Math.min(window.innerWidth, window.innerHeight);
             canvas.width = size;
             canvas.height = size;
             CELL_SIZE = canvas.width / GRID_SIZE;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        const playerId = "player_" + Math.random().toString(36).substr(2, 9);
-        let player = {
-            x: Math.floor(Math.random() * GRID_SIZE),
-            y: Math.floor(Math.random() * GRID_SIZE),
-            health: 100,
-            quarks: 0,
-            facing: 'up', 
-            stats: { speedMs: 200, fireRateMs: 500, damage: 10 }
-        };
+        function startGame() {
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            isPlaying = true;
 
-        let lastMove = 0;
-        let lastShot = 0;
+            // Спавн у випадковому місці
+            player.x = Math.floor(Math.random() * GRID_SIZE);
+            player.y = Math.floor(Math.random() * GRID_SIZE);
+            player.health = 100;
+            player.alive = true;
+            document.getElementById('hp-count').innerText = player.health;
 
-        const enemies = {};
-        const bullets = {};
-        const items = {};
+            const playerRef = ref(db, `lobbies/${currentLobbyId}/players/${playerId}`);
+            set(playerRef, player);
 
-        const playerRef = ref(db, `players/${playerId}`);
-        set(playerRef, player);
-        window.addEventListener('beforeunload', () => remove(playerRef));
+            window.showNeonToast("Ти зайшов на Арену! Виживе тільки один.", 'yellow');
 
-        onChildAdded(ref(db, 'players'), (snapshot) => { if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val(); });
-        onChildChanged(ref(db, 'players'), (snapshot) => { if (snapshot.key !== playerId) enemies[snapshot.key] = snapshot.val(); });
-        onChildRemoved(ref(db, 'players'), (snapshot) => { delete enemies[snapshot.key]; });
-
-        onChildAdded(ref(db, 'items'), (snapshot) => { items[snapshot.key] = snapshot.val(); });
-        onChildRemoved(ref(db, 'items'), (snapshot) => { delete items[snapshot.key]; });
-
-        onChildAdded(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
-        onChildChanged(ref(db, 'bullets'), (snapshot) => { bullets[snapshot.key] = snapshot.val(); });
-        onChildRemoved(ref(db, 'bullets'), (snapshot) => { delete bullets[snapshot.key]; });
-
-        setInterval(() => {
-            const itemId = "item_" + Math.random().toString(36).substr(2, 9);
-            set(ref(db, `items/${itemId}`), {
-                x: Math.floor(Math.random() * GRID_SIZE),
-                y: Math.floor(Math.random() * GRID_SIZE),
-                type: 'quark'
+            // Слухаємо інших гравців в ЦЬОМУ лобі
+            const playersRef = ref(db, `lobbies/${currentLobbyId}/players`);
+            onChildAdded(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); });
+            onChildChanged(playersRef, (snap) => { 
+                if (snap.key !== playerId) enemies[snap.key] = snap.val(); 
+                checkWinCondition(); // Перевірка перемоги при зміні стану гравців
             });
-        }, 5000);
+            onChildRemoved(playersRef, (snap) => { 
+                delete enemies[snap.key]; 
+                checkWinCondition();
+            });
 
-        // Управління (виправлене)
+            // Слухаємо кулі
+            const bulletsRef = ref(db, `lobbies/${currentLobbyId}/bullets`);
+            onChildAdded(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); });
+            onChildChanged(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); checkHit(snap.key, snap.val()); });
+            onChildRemoved(bulletsRef, (snap) => { delete bullets[snap.key]; });
+
+            gameLoop();
+        }
+
+        function checkWinCondition() {
+            if (!player.alive) return; // Якщо ми мертві, ми не виграли
+            
+            let aliveEnemies = 0;
+            for (const id in enemies) {
+                if (enemies[id].alive) aliveEnemies++;
+            }
+
+            // Якщо були інші гравці, а тепер 0, і ми живі - ми виграли!
+            if (aliveEnemies === 0 && Object.keys(enemies).length > 0) {
+                window.showNeonToast("👑 ПЕРЕМОГА! ТИ ОСТАННІЙ, ХТО ВИЖИВ!", 'green');
+                setTimeout(() => leaveGame(), 4000);
+            }
+        }
+
+        function checkHit(bulletId, bullet) {
+            if (!player.alive) return;
+            // Якщо чужа куля влучила в нас
+            if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
+                player.health -= 25; // Урон 25
+                document.getElementById('hp-count').innerText = player.health;
+                
+                if (player.health <= 0) {
+                    player.health = 0;
+                    player.alive = false;
+                    document.getElementById('hp-count').innerText = "0";
+                    update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: 0, alive: false });
+                    window.showNeonToast("💀 ТЕБЕ ВБИТО!", 'red');
+                    
+                    // Виходимо через 3 секунди
+                    setTimeout(() => leaveGame(), 3000);
+                } else {
+                    update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health });
+                }
+                // Видаляємо кулю після влучання
+                remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
+            }
+        }
+
+        // Управління
         const keys = { w: false, a: false, s: false, d: false, space: false };
-        
         window.addEventListener('keydown', (e) => {
             if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = true;
             if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = true;
@@ -284,7 +333,6 @@
             if(e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = true;
             if(e.code === 'Space') keys.space = true;
         });
-        
         window.addEventListener('keyup', (e) => {
             if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = false;
             if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = false;
@@ -301,17 +349,13 @@
             btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
             btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
         };
-        
-        bindBtn('btn-up', 'w');
-        bindBtn('btn-down', 's');
-        bindBtn('btn-left', 'a');
-        bindBtn('btn-right', 'd');
-        bindBtn('btn-fire', 'space');
+        bindBtn('btn-up', 'w'); bindBtn('btn-down', 's'); bindBtn('btn-left', 'a'); bindBtn('btn-right', 'd'); bindBtn('btn-fire', 'space');
 
         function updateGame() {
+            if (!player.alive) return;
             const now = Date.now();
 
-            if (now - lastMove > player.stats.speedMs) {
+            if (now - lastMove > 150) { // Швидкість руху
                 let moved = false;
                 if (keys.w && player.y > 0) { player.y--; player.facing = 'up'; moved = true; }
                 else if (keys.s && player.y < GRID_SIZE - 1) { player.y++; player.facing = 'down'; moved = true; }
@@ -320,25 +364,17 @@
 
                 if (moved) {
                     lastMove = now;
-                    for (const id in items) {
-                        if (items[id].x === player.x && items[id].y === player.y) {
-                            player.quarks += 1;
-                            document.getElementById('quark-count').innerText = player.quarks;
-                            remove(ref(db, `items/${id}`)); 
-                        }
-                    }
-                    update(playerRef, { x: player.x, y: player.y, facing: player.facing });
+                    update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { x: player.x, y: player.y, facing: player.facing });
                 }
             }
 
-            if (keys.space && now - lastShot > player.stats.fireRateMs) {
+            if (keys.space && now - lastShot > 400) { // Швидкість стрільби
                 lastShot = now;
-                const bulletId = "b_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-                const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing, damage: player.stats.damage };
-                set(ref(db, `bullets/${bulletId}`), bulletData);
+                const bulletId = "b_" + Date.now();
+                const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing };
+                set(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), bulletData);
                 
-                let bx = player.x;
-                let by = player.y;
+                let bx = player.x; let by = player.y;
                 const bInterval = setInterval(() => {
                     if (bulletData.dir === 'up') by--;
                     if (bulletData.dir === 'down') by++;
@@ -347,15 +383,14 @@
 
                     if (bx < 0 || bx >= GRID_SIZE || by < 0 || by >= GRID_SIZE) {
                         clearInterval(bInterval);
-                        remove(ref(db, `bullets/${bulletId}`));
+                        remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
                     } else {
-                        update(ref(db, `bullets/${bulletId}`), { x: bx, y: by });
+                        update(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), { x: bx, y: by });
                     }
-                }, 100); 
+                }, 80); 
             }
         }
 
-        // Оновлений Рендер (векторна графіка)
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -363,53 +398,57 @@
             ctx.strokeStyle = "rgba(0, 255, 65, 0.05)";
             ctx.lineWidth = 1;
             for (let i = 0; i <= GRID_SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * CELL_SIZE, 0);
-                ctx.lineTo(i * CELL_SIZE, canvas.height);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i * CELL_SIZE);
-                ctx.lineTo(canvas.width, i * CELL_SIZE);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i * CELL_SIZE, 0); ctx.lineTo(i * CELL_SIZE, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * CELL_SIZE); ctx.lineTo(canvas.width, i * CELL_SIZE); ctx.stroke();
             }
 
-            // Кварки
-            for (const id in items) {
-                const item = items[id];
-                const cx = item.x * CELL_SIZE + CELL_SIZE / 2;
-                const cy = item.y * CELL_SIZE + CELL_SIZE / 2;
-                
-                ctx.beginPath();
-                ctx.arc(cx, cy, CELL_SIZE * 0.3, 0, Math.PI * 2);
-                ctx.fillStyle = "#00FF41";
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = "#00FF41";
-                ctx.fill();
-                ctx.shadowBlur = 0; 
-            }
-
-            // Вороги
+            // Інші гравці (Червоні, з іменами)
             for (const id in enemies) {
                 const enemy = enemies[id];
-                ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = "red";
+                if (!enemy.alive) continue; // Не малюємо мертвих
+                
+                // Кубик
+                ctx.fillStyle = "rgba(255, 0, 60, 0.2)";
+                ctx.strokeStyle = "#FF003C";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10; ctx.shadowColor = "#FF003C";
                 ctx.fillRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.strokeRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.fillStyle = "#FF003C";
+                ctx.fillRect(enemy.x * CELL_SIZE + CELL_SIZE * 0.3, enemy.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
                 ctx.shadowBlur = 0;
+
+                // Ім'я (ID) над гравцем
+                ctx.fillStyle = "#E0E0E0";
+                ctx.font = "10px Courier New";
+                ctx.textAlign = "center";
+                ctx.fillText(enemy.name, enemy.x * CELL_SIZE + CELL_SIZE/2, enemy.y * CELL_SIZE - 5);
+                
+                // HP полоска
+                ctx.fillStyle = "red";
+                ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE, 3);
+                ctx.fillStyle = "#00FF41";
+                ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE * (enemy.health / 100), 3);
             }
 
-            // Гравець
-            ctx.fillStyle = "rgba(0, 255, 65, 0.2)";
-            ctx.strokeStyle = "#00FF41";
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00FF41";
-            ctx.fillRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-            ctx.strokeRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-            
-            ctx.fillStyle = "#00FF41";
-            ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
-            ctx.shadowBlur = 0;
+            // Наш Гравець (Зелений)
+            if (player.alive) {
+                ctx.fillStyle = "rgba(0, 255, 65, 0.2)";
+                ctx.strokeStyle = "#00FF41";
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 15; ctx.shadowColor = "#00FF41";
+                ctx.fillRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.strokeRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.fillStyle = "#00FF41";
+                ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
+                ctx.shadowBlur = 0;
+                
+                // Наш текст
+                ctx.fillStyle = "#00FF41";
+                ctx.font = "10px Courier New";
+                ctx.textAlign = "center";
+                ctx.fillText("Я (" + player.name + ")", player.x * CELL_SIZE + CELL_SIZE/2, player.y * CELL_SIZE - 5);
+            }
 
             // Кулі
             for (const id in bullets) {
@@ -419,47 +458,25 @@
                 
                 ctx.beginPath();
                 ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2);
-                ctx.fillStyle = "#FFFFFF";
+                // Колір кулі залежить від того, чия вона (наша зелена, чужа червона)
+                if(b.ownerId === playerId) {
+                    ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41";
+                } else {
+                    ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C";
+                }
                 ctx.shadowBlur = 8;
-                ctx.shadowColor = "#00FF41";
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
         }
 
         function gameLoop() {
-            updateGame();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        window.toggleMenu = () => {
-            const menu = document.getElementById('upgrade-menu');
-            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
-        };
-
-        window.buyUpgrade = (type) => {
-            let cost = 0;
-            if (type === 'speed') cost = 10;
-            if (type === 'fireRate') cost = 15;
-            if (type === 'damage') cost = 20;
-            if (type === 'health') cost = 25;
-
-            if (player.quarks >= cost) {
-                player.quarks -= cost;
-                if (type === 'speed') player.stats.speedMs = Math.max(50, player.stats.speedMs - 20);
-                if (type === 'fireRate') player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 50);
-                if (type === 'damage') player.stats.damage += 5;
-                if (type === 'health') { player.health += 20; document.getElementById('hp-count').innerText = player.health; }
-                
-                document.getElementById('quark-count').innerText = player.quarks;
-                update(playerRef, { stats: player.stats, health: player.health, quarks: player.quarks });
-            } else {
-                alert("Недостатньо Кварків!");
+            if (isPlaying) {
+                updateGame();
+                draw();
             }
-        };
-
-        gameLoop();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
     </script>
 </body>
 </html>
