@@ -307,24 +307,45 @@
             });
         }, 5000);
 
-        // Управління
+// Управління
         const keys = { w: false, a: false, s: false, d: false, space: false };
         
+        // Використовуємо e.code, щоб гра реагувала на фізичні клавіші незалежно від мови розкладки (Укр/Англ)
         window.addEventListener('keydown', (e) => {
-            if(e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
-            if(e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
-            if(e.key === 's' || e.key === 'ArrowDown') keys.s = true;
-            if(e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
-            if(e.key === ' ') keys.space = true;
+            if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = true;
+            if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = true;
+            if(e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = true;
+            if(e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = true;
+            if(e.code === 'Space') keys.space = true;
         });
+        
         window.addEventListener('keyup', (e) => {
-            if(e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
-            if(e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
-            if(e.key === 's' || e.key === 'ArrowDown') keys.s = false;
-            if(e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
-            if(e.key === ' ') keys.space = false;
+            if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = false;
+            if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = false;
+            if(e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = false;
+            if(e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = false;
+            if(e.code === 'Space') keys.space = false;
         });
 
+        // Мобільне управління + Підтримка кліків мишкою для тестування на ПК
+        const bindBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            
+            // Для сенсорних екранів
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
+            
+            // Для мишки на комп'ютері
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+        
+        bindBtn('btn-up', 'w');
+        bindBtn('btn-down', 's');
+        bindBtn('btn-left', 'a');
+        bindBtn('btn-right', 'd');
+        bindBtn('btn-fire', 'space');
         // Мобільне управління
         const bindBtn = (id, key) => {
             const btn = document.getElementById(id);
