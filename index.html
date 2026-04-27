@@ -6,82 +6,44 @@
     <title>CyberCell-24: Battle Royale</title>
     <style>
         :root {
-            --bg-color: #101018;
-            --accent-green: #00FF41;
-            --accent-red: #FF003C;
-            --accent-yellow: #FCE803;
-            --text-light: #E0E0E0;
+            --bg-color: #101018; --text-light: #E0E0E0;
+            --accent-green: #00FF41; --accent-red: #FF003C; --accent-yellow: #FCE803;
         }
-
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: var(--bg-color); color: var(--text-light);
             font-family: 'Courier New', Courier, monospace; overflow: hidden; touch-action: none;
         }
-
-        #gameCanvas {
-            display: none; 
-            margin: 0 auto; background-color: var(--bg-color); box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
-        }
-
-        /* Сповіщення (Toasts) */
-        #toast-container {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none;
-        }
-        .neon-toast {
-            padding: 10px 20px; border-radius: 4px; font-weight: bold; text-align: center;
-            background: rgba(16, 16, 24, 0.9); text-shadow: 0 0 5px; opacity: 1; transition: opacity 0.3s;
-        }
+        #gameCanvas { display: none; margin: 0 auto; background-color: var(--bg-color); box-shadow: 0 0 20px rgba(0, 255, 65, 0.1); }
+        
+        #toast-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none; }
+        .neon-toast { padding: 10px 20px; border-radius: 4px; font-weight: bold; text-align: center; background: rgba(16, 16, 24, 0.9); text-shadow: 0 0 5px; opacity: 1; transition: opacity 0.3s; }
         .toast-green { color: var(--accent-green); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.5); }
         .toast-yellow { color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 0 0 15px rgba(252, 232, 3, 0.5); }
         .toast-red { color: var(--accent-red); border: 1px solid var(--accent-red); box-shadow: 0 0 15px rgba(255, 0, 60, 0.5); }
 
-        /* Лобі */
-        #lobby-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); display: flex; flex-direction: column; align-items: center; padding-top: 50px; z-index: 1000;
-        }
+        #lobby-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; flex-direction: column; align-items: center; padding-top: 50px; z-index: 1000; }
         #lobby-screen h1 { color: var(--accent-green); text-shadow: 0 0 10px var(--accent-green); text-align: center;}
-        .lobby-box {
-            width: 90%; max-width: 400px; border: 1px solid var(--accent-green); padding: 20px;
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); border-radius: 8px; margin-bottom: 20px;
-        }
+        .lobby-box { width: 90%; max-width: 400px; border: 1px solid var(--accent-green); padding: 20px; box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); border-radius: 8px; margin-bottom: 20px; }
         .lobby-list { max-height: 200px; overflow-y: auto; margin-top: 10px; border-top: 1px solid rgba(0, 255, 65, 0.3); padding-top: 10px;}
-        .lobby-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        button {
-            background: transparent; color: var(--accent-green); border: 1px solid var(--accent-green);
-            padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;
-            text-shadow: 0 0 2px var(--accent-green); box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); transition: 0.2s;
-        }
+        .lobby-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        button { background: transparent; color: var(--accent-green); border: 1px solid var(--accent-green); padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; text-shadow: 0 0 2px var(--accent-green); box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); transition: 0.2s; }
         button:hover { background: var(--accent-green); color: var(--bg-color); }
         button.red-btn { color: var(--accent-red); border-color: var(--accent-red); box-shadow: 0 0 5px rgba(255, 0, 60, 0.2); text-shadow: none;}
         button.red-btn:hover { background: var(--accent-red); color: white; }
 
-        /* Магазин (Upgrade Menu) */
-        #upgrade-menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px;
-            width: 300px; pointer-events: auto; display: none; z-index: 100;
-        }
-        #upgrade-menu h2 { color: var(--accent-green); text-align: center; margin-top: 0; text-shadow: 0 0 5px var(--accent-green); }
-        .upgrade-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px;
-        }
-
-        /* Ігровий UI */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
         #hud { position: absolute; top: 10px; left: 10px; font-size: 16px; pointer-events: auto; }
         .hud-text { color: var(--accent-green); text-shadow: 0 0 3px var(--accent-green); margin: 5px 0; }
-        .mobile-controls {
-            position: absolute; bottom: 30px; width: 100%; pointer-events: none;
-            display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box;
-        }
+        #host-btn { display: none; margin-top: 10px; pointer-events: auto; color: var(--accent-yellow); border-color: var(--accent-yellow); }
+        
+        #upgrade-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px; width: 320px; pointer-events: auto; display: none; z-index: 100; }
+        #upgrade-menu h2 { color: var(--accent-green); text-align: center; margin-top: 0; text-shadow: 0 0 5px var(--accent-green); }
+        .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; }
+        .build-btn { color: #00E5FF; border-color: #00E5FF; box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); }
+        
+        .mobile-controls { position: absolute; bottom: 30px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
         .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; pointer-events: auto; }
         .d-btn { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--accent-green); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; cursor: pointer; }
         .d-btn:active { background: rgba(0, 255, 65, 0.4); }
@@ -90,7 +52,6 @@
         .menu-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; }
         .fire-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,0,60,0.1); color: var(--accent-red); border: 1px solid var(--accent-red); }
         .fire-btn:active { background: rgba(255,0,60,0.4); }
-        
         #leave-btn { position: absolute; top: 10px; right: 10px; pointer-events: auto;}
     </style>
 </head>
@@ -107,9 +68,7 @@
         </div>
         <div class="lobby-box">
             <h3>Доступні Арени</h3>
-            <div class="lobby-list" id="active-lobbies">
-                <p style="color: gray; text-align: center;">Шукаю кімнати...</p>
-            </div>
+            <div class="lobby-list" id="active-lobbies"><p style="color: gray; text-align: center;">Шукаю...</p></div>
         </div>
     </div>
 
@@ -120,36 +79,26 @@
             <div class="hud-text">Room: <span id="current-room-name"></span></div>
             <div class="hud-text">HP: <span id="hp-count">100</span></div>
             <div class="hud-text">Quarks: <span id="quark-count">0</span></div>
+            <button id="host-btn" onclick="forceStartGame()">START NOW</button>
         </div>
         <button id="leave-btn" class="red-btn" onclick="leaveGame()">ВИЙТИ</button>
 
         <div id="upgrade-menu">
-            <h2>STORE / UPGRADES</h2>
-            <div class="upgrade-row">
-                <span>Speed Boost</span>
-                <button onclick="buyUpgrade('speed')">10 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Faster Fire</span>
-                <button onclick="buyUpgrade('fireRate')">15 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Damage +</span>
-                <button onclick="buyUpgrade('damage')">20 Q</button>
-            </div>
-            <div class="upgrade-row">
-                <span>Heal (+25 HP)</span>
-                <button onclick="buyUpgrade('health')">10 Q</button>
-            </div>
+            <h2>SHOP / BUILD</h2>
+            <div class="upgrade-row"><span>Wall (Стіна)</span><button class="build-btn" onclick="buyUpgrade('wall')">5 Q</button></div>
+            <div class="upgrade-row"><span>Miner (Майнер)</span><button class="build-btn" onclick="buyUpgrade('miner')">25 Q</button></div>
+            <hr style="border-color:#333">
+            <div class="upgrade-row"><span>Speed Boost</span><button onclick="buyUpgrade('speed')">10 Q</button></div>
+            <div class="upgrade-row"><span>Faster Fire</span><button onclick="buyUpgrade('fireRate')">15 Q</button></div>
+            <div class="upgrade-row"><span>Damage +</span><button onclick="buyUpgrade('damage')">20 Q</button></div>
+            <div class="upgrade-row"><span>Heal (+25 HP)</span><button onclick="buyUpgrade('health')">10 Q</button></div>
             <button onclick="toggleMenu()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
         </div>
 
         <div class="mobile-controls">
             <div class="d-pad">
-                <div class="d-btn d-up" id="btn-up">W</div>
-                <div class="d-btn d-left" id="btn-left">A</div>
-                <div class="d-btn d-right" id="btn-right">D</div>
-                <div class="d-btn d-down" id="btn-down">S</div>
+                <div class="d-btn d-up" id="btn-up">W</div><div class="d-btn d-left" id="btn-left">A</div>
+                <div class="d-btn d-right" id="btn-right">D</div><div class="d-btn d-down" id="btn-down">S</div>
             </div>
             <div class="action-btns">
                 <button class="menu-btn" onclick="toggleMenu()">SHOP</button>
@@ -160,26 +109,27 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // Додано onDisconnect для автоматичного видалення при розриві зв'язку
         import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8",
-            authDomain: "cybercell-24.firebaseapp.com",
-            databaseURL: "https://cybercell-24-default-rtdb.firebaseio.com",
-            projectId: "cybercell-24",
-            storageBucket: "cybercell-24.firebasestorage.app",
-            messagingSenderId: "1095428474585",
-            appId: "1:1095428474585:web:b5e1b5447656957c77a0c8"
+            apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8", authDomain: "cybercell-24.firebaseapp.com",
+            databaseURL: "https://cybercell-24-default-rtdb.firebaseio.com", projectId: "cybercell-24",
+            storageBucket: "cybercell-24.firebasestorage.app", messagingSenderId: "1095428474585", appId: "1:1095428474585:web:b5e1b5447656957c77a0c8"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        const ALL_COLORS = ['#FF003C', '#00E5FF', '#FCE803', '#B800FF', '#FF8C00', '#00FF41', '#FF00FF', '#FFFFFF', '#00FA9A', '#FF1493'];
+        
         let currentLobbyId = null;
-        let isPlaying = false;
+        let isPlayingInLobby = false; // Чи ми взагалі в кімнаті
+        let roomState = 'waiting'; // waiting, counting, playing
+        let countDownEnd = 0;
+        
         let animationFrameId;
-        let quarkIntervalId;
+        let hostIntervals = [];
+        let myMinerIntervals = {};
         const GRID_SIZE = 24;
         let CELL_SIZE = 0;
         
@@ -187,49 +137,33 @@
         const playerId = "player_" + Math.random().toString(36).substr(2, 9);
         
         let player = {
-            name: shortPlayerId,
-            x: 0, y: 0,
-            health: 100,
-            quarks: 0,
-            facing: 'up',
-            alive: true,
-            stats: { speedMs: 200, fireRateMs: 500, damage: 20 }
+            name: shortPlayerId, x: 0, y: 0, health: 100, quarks: 0, facing: 'up', alive: true,
+            stats: { speedMs: 200, fireRateMs: 500, damage: 20 },
+            joinTime: Date.now(), color: '#00FF41' // Дефолт, зміниться при вході
         };
 
         let lastMove = 0; let lastShot = 0;
-        let enemies = {}; let bullets = {}; let items = {}; 
+        let enemies = {}; let bullets = {}; let items = {}; let structures = {};
         
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
 
         window.showNeonToast = (message, type = 'green') => {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `neon-toast toast-${type}`;
-            toast.innerText = message;
-            container.appendChild(toast);
+            const container = document.getElementById('toast-container'); const toast = document.createElement('div');
+            toast.className = `neon-toast toast-${type}`; toast.innerText = message; container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
         const lobbiesRef = ref(db, 'lobbies');
         onValue(lobbiesRef, (snapshot) => {
+            if(isPlayingInLobby) return; // Не оновлюємо лобі, якщо ми в грі
             const lobbies = snapshot.val();
-            const listDiv = document.getElementById('active-lobbies');
-            listDiv.innerHTML = '';
-            if (!lobbies) { listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає активних кімнат. Створи першу!</p>'; return; }
-            
+            const listDiv = document.getElementById('active-lobbies'); listDiv.innerHTML = '';
+            if (!lobbies) { listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає кімнат.</p>'; return; }
             for (const [id, data] of Object.entries(lobbies)) {
                 let playerCount = data.players ? Object.keys(data.players).length : 0;
-                
-                // --- СИСТЕМА САМООЧИСТКИ 1 ---
-                // Якщо 0 гравців і кімната існує довше 10 секунд - видаляємо її
-                if (playerCount === 0 && (Date.now() - data.created > 10000)) {
-                    remove(ref(db, `lobbies/${id}`));
-                    continue; 
-                }
-
+                if (playerCount === 0 && (Date.now() - data.created > 10000)) { remove(ref(db, `lobbies/${id}`)); continue; }
                 const item = document.createElement('div'); item.className = 'lobby-item';
-                item.innerHTML = `<span>${data.name} (Гравців: ${playerCount})</span><button onclick="joinLobby('${id}', '${data.name}')">ВВІЙТИ</button>`;
+                item.innerHTML = `<span>${data.name} (${playerCount}/10)</span><button onclick="joinLobby('${id}', '${data.name}')">ВВІЙТИ</button>`;
                 listDiv.appendChild(item);
             }
         });
@@ -237,54 +171,110 @@
         window.createNewLobby = () => {
             const nameInput = document.getElementById('new-lobby-name').value || "Арена " + Math.floor(Math.random()*100);
             const newLobbyRef = push(ref(db, 'lobbies'));
-            // Одразу після створення кімнати закидаємо туди творця
-            set(newLobbyRef, { name: nameInput, created: Date.now() }).then(() => { 
-                window.showNeonToast(`Лобі "${nameInput}" створено!`, 'green');
+            set(newLobbyRef, { name: nameInput, created: Date.now(), roomState: 'waiting' }).then(() => { 
                 joinLobby(newLobbyRef.key, nameInput);
             });
         };
 
+        // Логіка Головного (Host)
+        function getHostId() {
+            let all = [{id: playerId, joinTime: player.joinTime}];
+            for(let id in enemies) all.push({id: id, joinTime: enemies[id].joinTime});
+            all.sort((a,b) => a.joinTime - b.joinTime);
+            return all[0] ? all[0].id : playerId;
+        }
+        function isHost() { return getHostId() === playerId; }
+
+        function getUniqueColor() {
+            let usedColors = Object.values(enemies).map(e => e.color);
+            for(let c of ALL_COLORS) { if(!usedColors.includes(c)) return c; }
+            return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)];
+        }
+
         window.joinLobby = (lobbyId, lobbyName) => {
-            currentLobbyId = lobbyId;
+            currentLobbyId = lobbyId; isPlayingInLobby = true;
             document.getElementById('lobby-screen').style.display = 'none';
             canvas.style.display = 'block'; document.getElementById('ui-layer').style.display = 'block';
             document.getElementById('current-room-name').innerText = lobbyName;
-            startGame();
+            
+            // Спочатку завантажимо ворогів щоб вибрати колір
+            get(ref(db, `lobbies/${currentLobbyId}/players`)).then((snap) => {
+                if(snap.exists()) {
+                    let data = snap.val();
+                    for(let k in data) if(k !== playerId) enemies[k] = data[k];
+                }
+                player.color = getUniqueColor();
+                startGame();
+            });
         };
 
         window.leaveGame = () => {
             if (currentLobbyId) {
-                // --- СИСТЕМА САМООЧИСТКИ 2 ---
                 remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
-                // Якщо крім нас нікого не було в enemies, значить кімната пуста
-                if (Object.keys(enemies).length === 0) {
-                    remove(ref(db, `lobbies/${currentLobbyId}`));
-                }
+                if (Object.keys(enemies).length === 0) remove(ref(db, `lobbies/${currentLobbyId}`));
             }
             location.reload();
         };
-        window.addEventListener('beforeunload', () => { window.leaveGame(); });
+        window.addEventListener('beforeunload', () => window.leaveGame());
 
         window.toggleMenu = () => {
+            if(roomState !== 'playing') { window.showNeonToast("Магазин закритий до початку гри!", "yellow"); return; }
             const menu = document.getElementById('upgrade-menu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         };
 
         window.buyUpgrade = (type) => {
             let cost = 0;
+            if (type === 'wall') cost = 5; if (type === 'miner') cost = 25;
             if (type === 'speed') cost = 10; if (type === 'fireRate') cost = 15;
             if (type === 'damage') cost = 20; if (type === 'health') cost = 10;
 
             if (player.quarks >= cost) {
-                player.quarks -= cost;
-                if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість збільшено!", "green"); }
-                if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Швидкострільність збільшено!", "green"); }
-                if (type === 'damage') { player.stats.damage += 10; window.showNeonToast("Урон збільшено!", "green"); }
-                if (type === 'health') { player.health = Math.min(100, player.health + 25); document.getElementById('hp-count').innerText = player.health; window.showNeonToast("Здоров'я відновлено!", "green"); }
+                // Перевірка для будівель (чи вільна клітинка)
+                if (type === 'wall' || type === 'miner') {
+                    for(let id in structures) {
+                        if(structures[id].x === player.x && structures[id].y === player.y) {
+                            window.showNeonToast("Тут вже щось побудовано!", "red"); return;
+                        }
+                    }
+                    // Ставимо будівлю
+                    player.quarks -= cost;
+                    const sid = "s_" + Date.now();
+                    set(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), {
+                        ownerId: playerId, type: type, x: player.x, y: player.y, color: player.color, hp: (type==='wall'?4:2)
+                    });
+                    
+                    if(type === 'miner') {
+                        window.showNeonToast("Майнер встановлено!", "green");
+                        // Запускаємо локальний таймер прибутку
+                        myMinerIntervals[sid] = setInterval(() => {
+                            if(player.alive && roomState === 'playing') {
+                                player.quarks += 1;
+                                document.getElementById('quark-count').innerText = player.quarks;
+                                update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { quarks: player.quarks });
+                            }
+                        }, 3000);
+                    } else {
+                        window.showNeonToast("Стіну встановлено!", "green");
+                    }
+                } else {
+                    // Апгрейди
+                    player.quarks -= cost;
+                    if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість +", "green"); }
+                    if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Стрільба +", "green"); }
+                    if (type === 'damage') { player.stats.damage += 10; window.showNeonToast("Урон +", "green"); }
+                    if (type === 'health') { player.health = Math.min(100, player.health + 25); document.getElementById('hp-count').innerText = player.health; window.showNeonToast("Хілл +", "green"); }
+                }
                 
                 document.getElementById('quark-count').innerText = player.quarks;
                 update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health, quarks: player.quarks });
-            } else { window.showNeonToast("Недостатньо Кварків!", "red"); }
+            } else { window.showNeonToast("Треба більше Кварків!", "red"); }
+        };
+
+        window.forceStartGame = () => {
+            if(isHost() && roomState === 'waiting') {
+                update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 3000 });
+            }
         };
 
         function resizeCanvas() {
@@ -293,49 +283,54 @@
         }
 
         function startGame() {
-            window.addEventListener('resize', resizeCanvas); resizeCanvas(); isPlaying = true;
+            window.addEventListener('resize', resizeCanvas); resizeCanvas();
             player.x = Math.floor(Math.random() * GRID_SIZE); player.y = Math.floor(Math.random() * GRID_SIZE);
             player.health = 100; player.quarks = 0; player.alive = true;
-            document.getElementById('hp-count').innerText = player.health;
-            document.getElementById('quark-count').innerText = player.quarks;
+            document.getElementById('hp-count').innerText = player.health; document.getElementById('quark-count').innerText = player.quarks;
 
             const playerRef = ref(db, `lobbies/${currentLobbyId}/players/${playerId}`);
-            set(playerRef, player);
-            
-            // --- СИСТЕМА САМООЧИСТКИ 3 (Захист від вимкнення світла/інтернету) ---
-            onDisconnect(playerRef).remove();
+            set(playerRef, player); onDisconnect(playerRef).remove();
 
-            window.showNeonToast("Ти зайшов на Арену!", 'yellow');
+            // Слухаємо стан кімнати
+            onValue(ref(db, `lobbies/${currentLobbyId}`), (snap) => {
+                if(!snap.exists()) return;
+                const data = snap.val();
+                if(data.roomState) roomState = data.roomState;
+                if(data.countDownEnd) countDownEnd = data.countDownEnd;
+            });
 
+            // Вороги
             const playersRef = ref(db, `lobbies/${currentLobbyId}/players`);
             onChildAdded(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); });
             onChildChanged(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); checkWinCondition(); });
             onChildRemoved(playersRef, (snap) => { delete enemies[snap.key]; checkWinCondition(); });
 
+            // Кулі
             const bulletsRef = ref(db, `lobbies/${currentLobbyId}/bullets`);
             onChildAdded(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); });
             onChildChanged(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); checkHit(snap.key, snap.val()); });
             onChildRemoved(bulletsRef, (snap) => { delete bullets[snap.key]; });
 
+            // Предмети
             const itemsRef = ref(db, `lobbies/${currentLobbyId}/items`);
             onChildAdded(itemsRef, (snap) => { items[snap.key] = snap.val(); });
             onChildRemoved(itemsRef, (snap) => { delete items[snap.key]; });
 
-            quarkIntervalId = setInterval(() => {
-                if(!isPlaying || !player.alive) return;
-                if(Math.random() < 0.3) {
-                    const itemId = "q_" + Date.now() + Math.floor(Math.random()*100);
-                    set(ref(db, `lobbies/${currentLobbyId}/items/${itemId}`), { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) });
-                }
-            }, 2000);
+            // Структури
+            const structRef = ref(db, `lobbies/${currentLobbyId}/structures`);
+            onChildAdded(structRef, (snap) => { structures[snap.key] = snap.val(); });
+            onChildChanged(structRef, (snap) => { structures[snap.key] = snap.val(); });
+            onChildRemoved(structRef, (snap) => { 
+                delete structures[snap.key]; 
+                if(myMinerIntervals[snap.key]) { clearInterval(myMinerIntervals[snap.key]); delete myMinerIntervals[snap.key]; }
+            });
 
             gameLoop();
         }
 
         function checkWinCondition() {
-            if (!player.alive) return;
-            let aliveEnemies = 0;
-            for (const id in enemies) { if (enemies[id].alive) aliveEnemies++; }
+            if (roomState !== 'playing' || !player.alive) return;
+            let aliveEnemies = 0; for (const id in enemies) { if (enemies[id].alive) aliveEnemies++; }
             if (aliveEnemies === 0 && Object.keys(enemies).length > 0) {
                 window.showNeonToast("👑 ПЕРЕМОГА! ТИ ОСТАННІЙ!", 'green');
                 setTimeout(() => window.leaveGame(), 4000);
@@ -343,73 +338,123 @@
         }
 
         function checkHit(bulletId, bullet) {
+            if (roomState !== 'playing') return;
+            // Перевірка попадання в структури (Робить тільки власник кулі, щоб уникнути багів)
+            if (bullet.ownerId === playerId) {
+                for(let sid in structures) {
+                    if(structures[sid].x === bullet.x && structures[sid].y === bullet.y) {
+                        let hp = structures[sid].hp - 1;
+                        if(hp <= 0) remove(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`));
+                        else update(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), {hp: hp});
+                        remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
+                        return;
+                    }
+                }
+            }
+
+            // Перевірка попадання в нас
             if (!player.alive) return;
             if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
-                player.health -= bullet.damage; 
-                document.getElementById('hp-count').innerText = player.health;
-                
+                player.health -= bullet.damage; document.getElementById('hp-count').innerText = player.health;
                 if (player.health <= 0) {
                     player.health = 0; player.alive = false; document.getElementById('hp-count').innerText = "0";
                     update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: 0, alive: false });
-                    window.showNeonToast("💀 ТЕБЕ ВБИТО!", 'red');
-                    setTimeout(() => window.leaveGame(), 3000);
-                } else {
-                    update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health });
-                }
+                    window.showNeonToast("💀 ТЕБЕ ВБИТО!", 'red'); setTimeout(() => window.leaveGame(), 3000);
+                } else { update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health }); }
                 remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
             }
         }
 
         const keys = { w: false, a: false, s: false, d: false, space: false };
-        window.addEventListener('keydown', (e) => {
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = true;
-            if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = true;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = true;
-            if(e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = true;
-            if(e.code === 'Space') keys.space = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if(e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = false;
-            if(e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = false;
-            if(e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = false;
-            if(e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = false;
-            if(e.code === 'Space') keys.space = false;
-        });
+        window.addEventListener('keydown', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=true; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=true; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=true; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=true; if(e.code==='Space')keys.space=true; });
+        window.addEventListener('keyup', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=false; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=false; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=false; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=false; if(e.code==='Space')keys.space=false; });
+        const bindBtn = (id, key) => { const btn = document.getElementById(id); btn.addEventListener('touchstart', (e)=>{e.preventDefault();keys[key]=true;},{passive:false}); btn.addEventListener('touchend', (e)=>{e.preventDefault();keys[key]=false;},{passive:false}); btn.addEventListener('mousedown', (e)=>{e.preventDefault();keys[key]=true;}); btn.addEventListener('mouseup', (e)=>{e.preventDefault();keys[key]=false;}); btn.addEventListener('mouseleave', (e)=>{e.preventDefault();keys[key]=false;}); };
+        bindBtn('btn-up','w');bindBtn('btn-down','s');bindBtn('btn-left','a');bindBtn('btn-right','d');bindBtn('btn-fire','space');
 
-        const bindBtn = (id, key) => {
-            const btn = document.getElementById(id);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
-            btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
-            btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
-            btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
-        };
-        bindBtn('btn-up', 'w'); bindBtn('btn-down', 's'); bindBtn('btn-left', 'a'); bindBtn('btn-right', 'd'); bindBtn('btn-fire', 'space');
+        function hostLogicManager() {
+            if(!isHost()) { 
+                document.getElementById('host-btn').style.display = 'none'; 
+                hostIntervals.forEach(i => clearInterval(i)); hostIntervals = []; 
+                return; 
+            }
+
+            let totalPlayers = Object.keys(enemies).length + 1;
+            
+            if(roomState === 'waiting') {
+                if(totalPlayers >= 2) {
+                    document.getElementById('host-btn').style.display = 'block';
+                    // Автостарт 30с
+                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 30000 });
+                } else {
+                    document.getElementById('host-btn').style.display = 'none';
+                }
+            } else if (roomState === 'counting') {
+                document.getElementById('host-btn').style.display = 'block';
+                if(totalPlayers < 2) {
+                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' });
+                } else if (Date.now() >= countDownEnd) {
+                    // ГРА ПОЧАЛАСЯ
+                    document.getElementById('host-btn').style.display = 'none';
+                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
+                    
+                    // Спавн 20 кварків
+                    for(let i=0; i<20; i++) {
+                        set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
+                    }
+                    
+                    // Інтервали
+                    hostIntervals.push(setInterval(() => {
+                        set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
+                    }, 5000));
+                    
+                    hostIntervals.push(setInterval(() => {
+                        set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
+                    }, 30000));
+                }
+            } else if (roomState === 'playing') {
+                document.getElementById('host-btn').style.display = 'none';
+            }
+        }
 
         function updateGame() {
             if (!player.alive) return;
+            hostLogicManager();
             const now = Date.now();
 
             if (now - lastMove > player.stats.speedMs) {
-                let moved = false;
-                if (keys.w && player.y > 0) { player.y--; player.facing = 'up'; moved = true; }
-                else if (keys.s && player.y < GRID_SIZE - 1) { player.y++; player.facing = 'down'; moved = true; }
-                else if (keys.a && player.x > 0) { player.x--; player.facing = 'left'; moved = true; }
-                else if (keys.d && player.x < GRID_SIZE - 1) { player.x++; player.facing = 'right'; moved = true; }
+                let moved = false; let newX = player.x; let newY = player.y;
+                if (keys.w && player.y > 0) { newY--; player.facing = 'up'; moved = true; }
+                else if (keys.s && player.y < GRID_SIZE - 1) { newY++; player.facing = 'down'; moved = true; }
+                else if (keys.a && player.x > 0) { newX--; player.facing = 'left'; moved = true; }
+                else if (keys.d && player.x < GRID_SIZE - 1) { newX++; player.facing = 'right'; moved = true; }
 
                 if (moved) {
-                    lastMove = now;
-                    for (const id in items) {
-                        if (items[id].x === player.x && items[id].y === player.y) {
-                            player.quarks += 1; document.getElementById('quark-count').innerText = player.quarks;
-                            remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); 
+                    // Перевірка колізії зі стінами (Wall)
+                    let canMove = true;
+                    for(let sid in structures) {
+                        if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) {
+                            canMove = false; break;
                         }
                     }
-                    update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { x: player.x, y: player.y, facing: player.facing });
+
+                    if(canMove) {
+                        player.x = newX; player.y = newY; lastMove = now;
+                        // Збір кварків
+                        if(roomState === 'playing') {
+                            for (const id in items) {
+                                if (items[id].x === player.x && items[id].y === player.y) {
+                                    player.quarks += (items[id].type === 'mega' ? 5 : 1);
+                                    document.getElementById('quark-count').innerText = player.quarks;
+                                    remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); 
+                                }
+                            }
+                        }
+                        update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { x: player.x, y: player.y, facing: player.facing });
+                    }
                 }
             }
 
-            if (keys.space && now - lastShot > player.stats.fireRateMs) {
+            if (keys.space && roomState === 'playing' && now - lastShot > player.stats.fireRateMs) {
                 lastShot = now;
                 const bulletId = "b_" + Date.now();
                 const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing, damage: player.stats.damage };
@@ -429,51 +474,99 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.strokeStyle = "rgba(0, 255, 65, 0.05)"; ctx.lineWidth = 1;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.05)"; ctx.lineWidth = 1;
             for (let i = 0; i <= GRID_SIZE; i++) {
                 ctx.beginPath(); ctx.moveTo(i * CELL_SIZE, 0); ctx.lineTo(i * CELL_SIZE, canvas.height); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(0, i * CELL_SIZE); ctx.lineTo(canvas.width, i * CELL_SIZE); ctx.stroke();
             }
 
+            // Малюємо структури
+            for(let sid in structures) {
+                const s = structures[sid];
+                if(s.type === 'wall') {
+                    ctx.fillStyle = s.color + "40"; ctx.strokeStyle = s.color; ctx.lineWidth = 2;
+                    ctx.shadowBlur = 10; ctx.shadowColor = s.color;
+                    ctx.fillRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    ctx.strokeRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    ctx.shadowBlur = 0;
+                } else if (s.type === 'miner') {
+                    ctx.fillStyle = s.color + "80"; ctx.strokeStyle = s.color; ctx.lineWidth = 2;
+                    ctx.shadowBlur = 10; ctx.shadowColor = s.color;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x * CELL_SIZE + CELL_SIZE/2, s.y * CELL_SIZE + 2);
+                    ctx.lineTo(s.x * CELL_SIZE + CELL_SIZE - 2, s.y * CELL_SIZE + CELL_SIZE - 2);
+                    ctx.lineTo(s.x * CELL_SIZE + 2, s.y * CELL_SIZE + CELL_SIZE - 2);
+                    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+                }
+            }
+
             for (const id in items) {
-                const item = items[id];
-                ctx.beginPath(); ctx.arc(item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE * 0.3, 0, Math.PI * 2);
-                ctx.fillStyle = "#00FF41"; ctx.shadowBlur = 10; ctx.shadowColor = "#00FF41"; ctx.fill(); ctx.shadowBlur = 0; 
+                const item = items[id]; const color = item.type === 'mega' ? '#00E5FF' : '#00FF41';
+                ctx.beginPath(); ctx.arc(item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2, item.type==='mega'?CELL_SIZE*0.4:CELL_SIZE*0.3, 0, Math.PI * 2);
+                ctx.fillStyle = color; ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0; 
             }
 
-            for (const id in enemies) {
-                const enemy = enemies[id];
-                if (!enemy.alive) continue; 
-                ctx.fillStyle = "rgba(255, 0, 60, 0.2)"; ctx.strokeStyle = "#FF003C"; ctx.lineWidth = 2;
-                ctx.shadowBlur = 10; ctx.shadowColor = "#FF003C";
-                ctx.fillRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.strokeRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.fillStyle = "#FF003C"; ctx.fillRect(enemy.x * CELL_SIZE + CELL_SIZE * 0.3, enemy.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); ctx.shadowBlur = 0;
+            function drawPlayer(pData, isMe) {
+                if(!pData.alive) return;
+                const color = pData.color;
+                ctx.fillStyle = color + "33"; ctx.strokeStyle = color; ctx.lineWidth = 2;
+                ctx.shadowBlur = 10; ctx.shadowColor = color;
+                ctx.fillRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                ctx.strokeRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                
+                // Якщо це хост - золотий круг
+                if(getHostId() === (isMe ? playerId : Object.keys(enemies).find(k => enemies[k] === pData))) {
+                    ctx.beginPath(); ctx.arc(pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE*0.3, 0, Math.PI*2);
+                    ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; ctx.fill();
+                } else {
+                    ctx.fillStyle = color; ctx.fillRect(pData.x * CELL_SIZE + CELL_SIZE * 0.3, pData.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); 
+                }
+                ctx.shadowBlur = 0;
+
                 ctx.fillStyle = "#E0E0E0"; ctx.font = "10px Courier New"; ctx.textAlign = "center";
-                ctx.fillText(enemy.name, enemy.x * CELL_SIZE + CELL_SIZE/2, enemy.y * CELL_SIZE - 5);
-                ctx.fillStyle = "red"; ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE, 3);
-                ctx.fillStyle = "#00FF41"; ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE * (enemy.health / 100), 3);
+                ctx.fillText((isMe ? "Я ("+pData.name+")" : pData.name), pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE - 5);
+                ctx.fillStyle = "red"; ctx.fillRect(pData.x * CELL_SIZE, pData.y * CELL_SIZE - 2, CELL_SIZE, 3);
+                ctx.fillStyle = "#00FF41"; ctx.fillRect(pData.x * CELL_SIZE, pData.y * CELL_SIZE - 2, CELL_SIZE * (pData.health / 100), 3);
             }
 
-            if (player.alive) {
-                ctx.fillStyle = "rgba(0, 255, 65, 0.2)"; ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 2;
-                ctx.shadowBlur = 15; ctx.shadowColor = "#00FF41";
-                ctx.fillRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.strokeRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.fillStyle = "#00FF41"; ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); ctx.shadowBlur = 0;
-                ctx.fillStyle = "#00FF41"; ctx.font = "10px Courier New"; ctx.textAlign = "center";
-                ctx.fillText("Я (" + player.name + ")", player.x * CELL_SIZE + CELL_SIZE/2, player.y * CELL_SIZE - 5);
-            }
+            for (const id in enemies) drawPlayer(enemies[id], false);
+            drawPlayer(player, true);
 
             for (const id in bullets) {
                 const b = bullets[id]; const cx = b.x * CELL_SIZE + CELL_SIZE / 2; const cy = b.y * CELL_SIZE + CELL_SIZE / 2;
+                const color = b.ownerId === playerId ? player.color : (enemies[b.ownerId] ? enemies[b.ownerId].color : '#FFF');
                 ctx.beginPath(); ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2);
-                if(b.ownerId === playerId) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; } else { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
-                ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+            }
+
+            // Малюємо UI стану кімнати
+            if(roomState === 'waiting') {
+                ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
+                ctx.fillText("ОЧІКУВАННЯ ГРАВЦІВ...", canvas.width/2, canvas.height/2);
+            } else if (roomState === 'counting') {
+                let left = Math.ceil((countDownEnd - Date.now()) / 1000);
+                if(left < 0) left = 0;
+                
+                // Таймер знизу
+                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
+                ctx.fillText(`Гра почнеться через: ${left}с`, canvas.width/2, canvas.height - 100);
+
+                // Великі цифри по центру
+                if(left <= 3 && left > 0) {
+                    ctx.font = "120px Courier New";
+                    if(left === 3) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; }
+                    if(left === 2) { ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; }
+                    if(left === 1) { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
+                    ctx.shadowBlur = 20; ctx.fillText(left, canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0;
+                } else if (left === 0) {
+                    ctx.font = "120px Courier New"; ctx.fillStyle = "#FFFFFF"; ctx.shadowColor = "#FFFFFF"; ctx.shadowBlur = 20;
+                    ctx.fillText("GO!", canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0;
+                }
             }
         }
 
-        function gameLoop() { if (isPlaying) { updateGame(); draw(); } animationFrameId = requestAnimationFrame(gameLoop); }
+        function gameLoop() { if (isPlayingInLobby) { updateGame(); draw(); } animationFrameId = requestAnimationFrame(gameLoop); }
     </script>
 </body>
 </html>
