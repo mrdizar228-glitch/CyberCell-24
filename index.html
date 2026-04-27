@@ -160,7 +160,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        // Додано onDisconnect для автоматичного видалення при розриві зв'язку
+        import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8",
@@ -185,7 +186,6 @@
         const shortPlayerId = "User_" + Math.floor(Math.random() * 9999);
         const playerId = "player_" + Math.random().toString(36).substr(2, 9);
         
-        // Додано кварки та статістики назад гравцю
         let player = {
             name: shortPlayerId,
             x: 0, y: 0,
@@ -196,17 +196,12 @@
             stats: { speedMs: 200, fireRateMs: 500, damage: 20 }
         };
 
-        let lastMove = 0;
-        let lastShot = 0;
-
-        let enemies = {};
-        let bullets = {};
-        let items = {}; // Сюди зберігатимуться кварки
+        let lastMove = 0; let lastShot = 0;
+        let enemies = {}; let bullets = {}; let items = {}; 
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Сповіщення
         window.showNeonToast = (message, type = 'green') => {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -216,15 +211,23 @@
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
-        // Лобі
         const lobbiesRef = ref(db, 'lobbies');
         onValue(lobbiesRef, (snapshot) => {
             const lobbies = snapshot.val();
             const listDiv = document.getElementById('active-lobbies');
             listDiv.innerHTML = '';
             if (!lobbies) { listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає активних кімнат. Створи першу!</p>'; return; }
+            
             for (const [id, data] of Object.entries(lobbies)) {
                 let playerCount = data.players ? Object.keys(data.players).length : 0;
+                
+                // --- СИСТЕМА САМООЧИСТКИ 1 ---
+                // Якщо 0 гравців і кімната існує довше 10 секунд - видаляємо її
+                if (playerCount === 0 && (Date.now() - data.created > 10000)) {
+                    remove(ref(db, `lobbies/${id}`));
+                    continue; 
+                }
+
                 const item = document.createElement('div'); item.className = 'lobby-item';
                 item.innerHTML = `<span>${data.name} (Гравців: ${playerCount})</span><button onclick="joinLobby('${id}', '${data.name}')">ВВІЙТИ</button>`;
                 listDiv.appendChild(item);
@@ -234,7 +237,11 @@
         window.createNewLobby = () => {
             const nameInput = document.getElementById('new-lobby-name').value || "Арена " + Math.floor(Math.random()*100);
             const newLobbyRef = push(ref(db, 'lobbies'));
-            set(newLobbyRef, { name: nameInput, created: Date.now() }).then(() => { window.showNeonToast(`Лобі "${nameInput}" створено!`, 'green'); });
+            // Одразу після створення кімнати закидаємо туди творця
+            set(newLobbyRef, { name: nameInput, created: Date.now() }).then(() => { 
+                window.showNeonToast(`Лобі "${nameInput}" створено!`, 'green');
+                joinLobby(newLobbyRef.key, nameInput);
+            });
         };
 
         window.joinLobby = (lobbyId, lobbyName) => {
@@ -246,12 +253,18 @@
         };
 
         window.leaveGame = () => {
-            if (currentLobbyId) remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
+            if (currentLobbyId) {
+                // --- СИСТЕМА САМООЧИСТКИ 2 ---
+                remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
+                // Якщо крім нас нікого не було в enemies, значить кімната пуста
+                if (Object.keys(enemies).length === 0) {
+                    remove(ref(db, `lobbies/${currentLobbyId}`));
+                }
+            }
             location.reload();
         };
-        window.addEventListener('beforeunload', () => { if (currentLobbyId && isPlaying) remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`)); });
+        window.addEventListener('beforeunload', () => { window.leaveGame(); });
 
-        // Магазин (Логіка)
         window.toggleMenu = () => {
             const menu = document.getElementById('upgrade-menu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
@@ -259,37 +272,19 @@
 
         window.buyUpgrade = (type) => {
             let cost = 0;
-            if (type === 'speed') cost = 10;
-            if (type === 'fireRate') cost = 15;
-            if (type === 'damage') cost = 20;
-            if (type === 'health') cost = 10;
+            if (type === 'speed') cost = 10; if (type === 'fireRate') cost = 15;
+            if (type === 'damage') cost = 20; if (type === 'health') cost = 10;
 
             if (player.quarks >= cost) {
                 player.quarks -= cost;
-                
-                if (type === 'speed') {
-                    player.stats.speedMs = Math.max(50, player.stats.speedMs - 25);
-                    window.showNeonToast("Швидкість збільшено!", "green");
-                }
-                if (type === 'fireRate') {
-                    player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75);
-                    window.showNeonToast("Швидкострільність збільшено!", "green");
-                }
-                if (type === 'damage') {
-                    player.stats.damage += 10;
-                    window.showNeonToast("Урон збільшено!", "green");
-                }
-                if (type === 'health') { 
-                    player.health = Math.min(100, player.health + 25); 
-                    document.getElementById('hp-count').innerText = player.health; 
-                    window.showNeonToast("Здоров'я відновлено!", "green");
-                }
+                if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість збільшено!", "green"); }
+                if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Швидкострільність збільшено!", "green"); }
+                if (type === 'damage') { player.stats.damage += 10; window.showNeonToast("Урон збільшено!", "green"); }
+                if (type === 'health') { player.health = Math.min(100, player.health + 25); document.getElementById('hp-count').innerText = player.health; window.showNeonToast("Здоров'я відновлено!", "green"); }
                 
                 document.getElementById('quark-count').innerText = player.quarks;
                 update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health, quarks: player.quarks });
-            } else {
-                window.showNeonToast("Недостатньо Кварків!", "red");
-            }
+            } else { window.showNeonToast("Недостатньо Кварків!", "red"); }
         };
 
         function resizeCanvas() {
@@ -306,35 +301,31 @@
 
             const playerRef = ref(db, `lobbies/${currentLobbyId}/players/${playerId}`);
             set(playerRef, player);
+            
+            // --- СИСТЕМА САМООЧИСТКИ 3 (Захист від вимкнення світла/інтернету) ---
+            onDisconnect(playerRef).remove();
+
             window.showNeonToast("Ти зайшов на Арену!", 'yellow');
 
-            // Гравці
             const playersRef = ref(db, `lobbies/${currentLobbyId}/players`);
             onChildAdded(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); });
             onChildChanged(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); checkWinCondition(); });
             onChildRemoved(playersRef, (snap) => { delete enemies[snap.key]; checkWinCondition(); });
 
-            // Кулі
             const bulletsRef = ref(db, `lobbies/${currentLobbyId}/bullets`);
             onChildAdded(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); });
             onChildChanged(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); checkHit(snap.key, snap.val()); });
             onChildRemoved(bulletsRef, (snap) => { delete bullets[snap.key]; });
 
-            // Кварки (Предмети)
             const itemsRef = ref(db, `lobbies/${currentLobbyId}/items`);
             onChildAdded(itemsRef, (snap) => { items[snap.key] = snap.val(); });
             onChildRemoved(itemsRef, (snap) => { delete items[snap.key]; });
 
-            // Генерація кварків
             quarkIntervalId = setInterval(() => {
                 if(!isPlaying || !player.alive) return;
-                // З імовірністю генеруємо кварк, щоб не заспамити карту
                 if(Math.random() < 0.3) {
                     const itemId = "q_" + Date.now() + Math.floor(Math.random()*100);
-                    set(ref(db, `lobbies/${currentLobbyId}/items/${itemId}`), {
-                        x: Math.floor(Math.random() * GRID_SIZE),
-                        y: Math.floor(Math.random() * GRID_SIZE)
-                    });
+                    set(ref(db, `lobbies/${currentLobbyId}/items/${itemId}`), { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) });
                 }
             }, 2000);
 
@@ -347,21 +338,21 @@
             for (const id in enemies) { if (enemies[id].alive) aliveEnemies++; }
             if (aliveEnemies === 0 && Object.keys(enemies).length > 0) {
                 window.showNeonToast("👑 ПЕРЕМОГА! ТИ ОСТАННІЙ!", 'green');
-                setTimeout(() => leaveGame(), 4000);
+                setTimeout(() => window.leaveGame(), 4000);
             }
         }
 
         function checkHit(bulletId, bullet) {
             if (!player.alive) return;
             if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
-                player.health -= bullet.damage; // Урон тепер залежить від прокачки стрільця
+                player.health -= bullet.damage; 
                 document.getElementById('hp-count').innerText = player.health;
                 
                 if (player.health <= 0) {
                     player.health = 0; player.alive = false; document.getElementById('hp-count').innerText = "0";
                     update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: 0, alive: false });
                     window.showNeonToast("💀 ТЕБЕ ВБИТО!", 'red');
-                    setTimeout(() => leaveGame(), 3000);
+                    setTimeout(() => window.leaveGame(), 3000);
                 } else {
                     update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health });
                 }
@@ -408,12 +399,9 @@
 
                 if (moved) {
                     lastMove = now;
-                    
-                    // Перевірка збору кварків
                     for (const id in items) {
                         if (items[id].x === player.x && items[id].y === player.y) {
-                            player.quarks += 1;
-                            document.getElementById('quark-count').innerText = player.quarks;
+                            player.quarks += 1; document.getElementById('quark-count').innerText = player.quarks;
                             remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); 
                         }
                     }
@@ -429,16 +417,11 @@
                 
                 let bx = player.x; let by = player.y;
                 const bInterval = setInterval(() => {
-                    if (bulletData.dir === 'up') by--;
-                    if (bulletData.dir === 'down') by++;
-                    if (bulletData.dir === 'left') bx--;
-                    if (bulletData.dir === 'right') bx++;
-
+                    if (bulletData.dir === 'up') by--; if (bulletData.dir === 'down') by++;
+                    if (bulletData.dir === 'left') bx--; if (bulletData.dir === 'right') bx++;
                     if (bx < 0 || bx >= GRID_SIZE || by < 0 || by >= GRID_SIZE) {
                         clearInterval(bInterval); remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
-                    } else {
-                        update(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), { x: bx, y: by });
-                    }
+                    } else { update(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), { x: bx, y: by }); }
                 }, 80); 
             }
         }
@@ -446,23 +429,18 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Сітка
             ctx.strokeStyle = "rgba(0, 255, 65, 0.05)"; ctx.lineWidth = 1;
             for (let i = 0; i <= GRID_SIZE; i++) {
                 ctx.beginPath(); ctx.moveTo(i * CELL_SIZE, 0); ctx.lineTo(i * CELL_SIZE, canvas.height); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(0, i * CELL_SIZE); ctx.lineTo(canvas.width, i * CELL_SIZE); ctx.stroke();
             }
 
-            // Кварки (Скверки)
             for (const id in items) {
                 const item = items[id];
-                ctx.beginPath();
-                ctx.arc(item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE * 0.3, 0, Math.PI * 2);
-                ctx.fillStyle = "#00FF41"; // Зелені, як ти просив
-                ctx.shadowBlur = 10; ctx.shadowColor = "#00FF41"; ctx.fill(); ctx.shadowBlur = 0; 
+                ctx.beginPath(); ctx.arc(item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = "#00FF41"; ctx.shadowBlur = 10; ctx.shadowColor = "#00FF41"; ctx.fill(); ctx.shadowBlur = 0; 
             }
 
-            // Інші гравці
             for (const id in enemies) {
                 const enemy = enemies[id];
                 if (!enemy.alive) continue; 
@@ -470,38 +448,27 @@
                 ctx.shadowBlur = 10; ctx.shadowColor = "#FF003C";
                 ctx.fillRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 ctx.strokeRect(enemy.x * CELL_SIZE + 2, enemy.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.fillStyle = "#FF003C";
-                ctx.fillRect(enemy.x * CELL_SIZE + CELL_SIZE * 0.3, enemy.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
-                ctx.shadowBlur = 0;
-
+                ctx.fillStyle = "#FF003C"; ctx.fillRect(enemy.x * CELL_SIZE + CELL_SIZE * 0.3, enemy.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); ctx.shadowBlur = 0;
                 ctx.fillStyle = "#E0E0E0"; ctx.font = "10px Courier New"; ctx.textAlign = "center";
                 ctx.fillText(enemy.name, enemy.x * CELL_SIZE + CELL_SIZE/2, enemy.y * CELL_SIZE - 5);
-                
                 ctx.fillStyle = "red"; ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE, 3);
                 ctx.fillStyle = "#00FF41"; ctx.fillRect(enemy.x * CELL_SIZE, enemy.y * CELL_SIZE - 2, CELL_SIZE * (enemy.health / 100), 3);
             }
 
-            // Наш Гравець
             if (player.alive) {
                 ctx.fillStyle = "rgba(0, 255, 65, 0.2)"; ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 2;
                 ctx.shadowBlur = 15; ctx.shadowColor = "#00FF41";
                 ctx.fillRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 ctx.strokeRect(player.x * CELL_SIZE + 2, player.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.fillStyle = "#00FF41";
-                ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4);
-                ctx.shadowBlur = 0;
-                
+                ctx.fillStyle = "#00FF41"; ctx.fillRect(player.x * CELL_SIZE + CELL_SIZE * 0.3, player.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); ctx.shadowBlur = 0;
                 ctx.fillStyle = "#00FF41"; ctx.font = "10px Courier New"; ctx.textAlign = "center";
                 ctx.fillText("Я (" + player.name + ")", player.x * CELL_SIZE + CELL_SIZE/2, player.y * CELL_SIZE - 5);
             }
 
-            // Кулі
             for (const id in bullets) {
-                const b = bullets[id];
-                const cx = b.x * CELL_SIZE + CELL_SIZE / 2; const cy = b.y * CELL_SIZE + CELL_SIZE / 2;
+                const b = bullets[id]; const cx = b.x * CELL_SIZE + CELL_SIZE / 2; const cy = b.y * CELL_SIZE + CELL_SIZE / 2;
                 ctx.beginPath(); ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2);
-                if(b.ownerId === playerId) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; } 
-                else { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
+                if(b.ownerId === playerId) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; } else { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
                 ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
             }
         }
