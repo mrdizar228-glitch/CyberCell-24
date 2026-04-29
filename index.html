@@ -38,8 +38,8 @@
         .hud-text { color: var(--accent-green); text-shadow: 0 0 3px var(--accent-green); margin: 5px 0; }
         #host-btn { display: none; margin-top: 10px; pointer-events: auto; color: var(--accent-yellow); border-color: var(--accent-yellow); }
         
-        /* МЕНЮ МАГАЗИНУ ТА НАЛАШТУВАНЬ */
-        .modal-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px; width: 320px; pointer-events: auto; display: none; z-index: 100; }
+        /* МЕНЮ */
+        .modal-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px; width: 320px; pointer-events: auto; display: none; z-index: 2000; }
         .modal-menu h2 { color: var(--accent-green); text-align: center; margin-top: 0; text-shadow: 0 0 5px var(--accent-green); }
         .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; }
         .build-btn { color: #00E5FF; border-color: #00E5FF; box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); }
@@ -50,17 +50,16 @@
 
         .mobile-controls { position: absolute; bottom: 30px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px; box-sizing: border-box; }
         
-        /* ДЖОЙСТИК */
         #joystick-zone { width: 120px; height: 120px; background: rgba(0, 255, 65, 0.1); border: 2px solid var(--accent-green); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2); }
         #joystick-stick { width: 50px; height: 50px; background: var(--accent-green); border-radius: 50%; position: absolute; top: 33px; left: 33px; pointer-events: none; box-shadow: 0 0 15px var(--accent-green); transition: transform 0.05s linear; }
 
         .action-btns { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; align-items: flex-end; }
-        .top-action-row { display: flex; gap: 10px; }
         .menu-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; }
         .fire-btn { width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,0,60,0.1); color: var(--accent-red); border: 2px solid var(--accent-red); font-size: 14px; font-weight: bold; box-shadow: 0 0 10px rgba(255,0,60,0.3); }
         .fire-btn:active { background: rgba(255,0,60,0.4); }
         
         #top-right-btns { position: absolute; top: 10px; right: 10px; pointer-events: auto; display: flex; gap: 10px; }
+        #lobby-settings-btn { position: absolute; top: 10px; right: 10px; z-index: 1001; }
     </style>
 </head>
 <body>
@@ -70,7 +69,24 @@
         <div id="yt-player"></div>
     </div>
 
+    <div id="settings-menu" class="modal-menu">
+        <h2>SETTINGS</h2>
+        <div class="settings-row">
+            <label>Effects volume</label>
+            <input type="range" id="sfx-vol" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <div class="settings-row">
+            <button id="music-toggle-btn" onclick="toggleMusic()">Music: OFF</button>
+        </div>
+        <div class="settings-row" id="music-vol-container" style="display: none;">
+            <label>Music volume</label>
+            <input type="range" id="music-vol" min="0" max="100" step="1" value="50">
+        </div>
+        <button onclick="toggleSettings()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
+    </div>
+
     <div id="lobby-screen">
+        <button id="lobby-settings-btn" class="menu-btn" style="border-radius: 4px; padding: 10px; width: auto; height: auto;" onclick="toggleSettings()">⚙️ НАЛАШТУВАННЯ</button>
         <h1>CYBERCELL BATTLE ROYALE</h1>
         <div class="lobby-box">
             <h3>Створити свою арену</h3>
@@ -109,26 +125,8 @@
             <button onclick="toggleMenu()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
         </div>
 
-        <div id="settings-menu" class="modal-menu">
-            <h2>SETTINGS</h2>
-            <div class="settings-row">
-                <label>Effects volume</label>
-                <input type="range" id="sfx-vol" min="0" max="1" step="0.1" value="0.5">
-            </div>
-            <div class="settings-row">
-                <button id="music-toggle-btn" onclick="toggleMusic()">Music: OFF</button>
-            </div>
-            <div class="settings-row" id="music-vol-container" style="display: none;">
-                <label>Music volume</label>
-                <input type="range" id="music-vol" min="0" max="100" step="1" value="50">
-            </div>
-            <button onclick="toggleSettings()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
-        </div>
-
         <div class="mobile-controls">
-            <div id="joystick-zone">
-                <div id="joystick-stick"></div>
-            </div>
+            <div id="joystick-zone"><div id="joystick-stick"></div></div>
             <div class="action-btns">
                 <button class="menu-btn" onclick="toggleMenu()">SHOP</button>
                 <button class="fire-btn" id="btn-fire">FIRE</button>
@@ -147,53 +145,76 @@
             databaseURL: "https://cybercell-24-default-rtdb.firebaseio.com", projectId: "cybercell-24",
             storageBucket: "cybercell-24.firebasestorage.app", messagingSenderId: "1095428474585", appId: "1:1095428474585:web:b5e1b5447656957c77a0c8"
         };
-
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
-        // --- ЗВУКОВІ ЕФЕКТИ ТА МУЗИКА ---
-        const sounds = {
-            shoot: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/pew.mp3'),
-            hit: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/hit.mp3'),
-            coin: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/coin.mp3'),
-            build: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/pop.mp3')
-        };
-        
-        window.playSfx = (name) => {
+        // --- ВЛАСНИЙ СИНТЕЗАТОР ЗВУКІВ (WEB AUDIO API) ---
+        // Працює завжди, не вимагає скачування файлів, ідеально для 8-bit ретро ігор.
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if(!audioCtx) { audioCtx = new AudioContext(); } if(audioCtx.state === 'suspended') { audioCtx.resume(); } }
+
+        window.playSfx = (type) => {
+            initAudio();
             let vol = parseFloat(document.getElementById('sfx-vol').value);
-            if (vol > 0 && sounds[name]) {
-                let s = sounds[name].cloneNode();
-                s.volume = vol;
-                s.play().catch(e=>{});
+            if(vol <= 0 || !audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            
+            if(type === 'shoot') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                gainNode.gain.setValueAtTime(vol * 0.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.2);
+                gainNode.gain.setValueAtTime(vol, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'coin') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.setValueAtTime(1600, now + 0.05);
+                gainNode.gain.setValueAtTime(vol * 0.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'build') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(vol * 0.8, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
             }
         };
 
+        // --- YOUTUBE МУЗИКА ---
         let ytPlayer;
         window.onYouTubeIframeAPIReady = function() {
-            ytPlayer = new YT.Player('yt-player', {
-                height: '10', width: '10', videoId: 'hrgzWEgCCFg',
-                playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'hrgzWEgCCFg' }
-            });
+            ytPlayer = new YT.Player('yt-player', { height: '10', width: '10', videoId: 'hrgzWEgCCFg', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'hrgzWEgCCFg' } });
         };
-
         let isMusicOn = false;
         window.toggleMusic = () => {
+            initAudio(); // Розм'якшуємо браузер
             isMusicOn = !isMusicOn;
             const btn = document.getElementById('music-toggle-btn');
             const volCont = document.getElementById('music-vol-container');
             if(isMusicOn) {
                 btn.innerText = "Music: ON"; volCont.style.display = "flex";
-                if(ytPlayer && ytPlayer.playVideo) {
-                    ytPlayer.setVolume(document.getElementById('music-vol').value);
-                    ytPlayer.playVideo();
-                }
+                if(ytPlayer && ytPlayer.playVideo) { ytPlayer.setVolume(document.getElementById('music-vol').value); ytPlayer.playVideo(); }
             } else {
                 btn.innerText = "Music: OFF"; volCont.style.display = "none";
                 if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
             }
         };
-        document.getElementById('music-vol').addEventListener('input', (e) => {
-            if(ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(e.target.value);
-        });
+        document.getElementById('music-vol').addEventListener('input', (e) => { if(ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(e.target.value); });
 
         // --- ОСНОВНА ЛОГІКА ---
         const ALL_COLORS = ['#FF003C', '#00E5FF', '#FCE803', '#B800FF', '#FF8C00', '#00FF41', '#FF00FF', '#FFFFFF', '#00FA9A', '#FF1493'];
@@ -230,6 +251,7 @@
         });
 
         window.createNewLobby = () => {
+            initAudio();
             const nameInput = document.getElementById('new-lobby-name').value || "Арена " + Math.floor(Math.random()*100);
             const newLobbyRef = push(ref(db, 'lobbies'));
             set(newLobbyRef, { name: nameInput, created: Date.now(), roomState: 'waiting' }).then(() => { joinLobby(newLobbyRef.key, nameInput); });
@@ -243,11 +265,11 @@
         function isHost() { return getHostId() === playerId; }
         function getUniqueColor() {
             let usedColors = Object.values(enemies).map(e => e.color);
-            for(let c of ALL_COLORS) { if(!usedColors.includes(c)) return c; }
-            return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)];
+            for(let c of ALL_COLORS) { if(!usedColors.includes(c)) return c; } return ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)];
         }
 
         window.joinLobby = (lobbyId, lobbyName) => {
+            initAudio();
             currentLobbyId = lobbyId; isPlayingInLobby = true;
             document.getElementById('lobby-screen').style.display = 'none';
             canvas.style.display = 'block'; document.getElementById('ui-layer').style.display = 'block';
@@ -260,15 +282,13 @@
         };
 
         window.leaveGame = () => {
-            if (currentLobbyId) {
-                remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`));
-                if (Object.keys(enemies).length === 0) remove(ref(db, `lobbies/${currentLobbyId}`));
-            }
+            if (currentLobbyId) { remove(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`)); if (Object.keys(enemies).length === 0) remove(ref(db, `lobbies/${currentLobbyId}`)); }
             location.reload();
         };
         window.addEventListener('beforeunload', () => window.leaveGame());
 
         window.toggleMenu = () => {
+            initAudio();
             if(roomState !== 'playing') { window.showNeonToast("Магазин закритий до початку гри!", "yellow"); return; }
             document.getElementById('settings-menu').style.display = 'none';
             const menu = document.getElementById('upgrade-menu');
@@ -276,6 +296,7 @@
         };
 
         window.toggleSettings = () => {
+            initAudio();
             document.getElementById('upgrade-menu').style.display = 'none';
             const menu = document.getElementById('settings-menu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
@@ -289,48 +310,34 @@
 
             if (player.quarks >= cost) {
                 if (type === 'wall' || type === 'miner') {
-                    for(let id in structures) {
-                        if(structures[id].x === player.x && structures[id].y === player.y) { window.showNeonToast("Тут вже щось побудовано!", "red"); return; }
-                    }
-                    player.quarks -= cost;
-                    const sid = "s_" + Date.now();
+                    for(let id in structures) { if(structures[id].x === player.x && structures[id].y === player.y) { window.showNeonToast("Тут вже щось побудовано!", "red"); return; } }
+                    player.quarks -= cost; const sid = "s_" + Date.now();
                     set(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), { ownerId: playerId, type: type, x: player.x, y: player.y, color: player.color, hp: (type==='wall'?4:2) });
                     playSfx('build');
-                    
                     if(type === 'miner') {
                         window.showNeonToast("Майнер встановлено!", "green");
                         myMinerIntervals[sid] = setInterval(() => {
                             if(player.alive && roomState === 'playing') {
                                 player.quarks += 1; document.getElementById('quark-count').innerText = player.quarks;
-                                update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { quarks: player.quarks });
-                                playSfx('coin'); // Тихий звук збору з майнера
+                                update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { quarks: player.quarks }); playSfx('coin');
                             }
                         }, 3000);
                     } else { window.showNeonToast("Стіну встановлено!", "green"); }
                 } else {
-                    player.quarks -= cost;
+                    player.quarks -= cost; playSfx('build');
                     if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість +", "green"); }
                     if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Стрільба +", "green"); }
                     if (type === 'damage') { player.stats.damage += 10; window.showNeonToast("Урон +", "green"); }
                     if (type === 'health') { player.health = Math.min(100, player.health + 25); document.getElementById('hp-count').innerText = player.health; window.showNeonToast("Хілл +", "green"); }
-                    playSfx('build');
                 }
                 document.getElementById('quark-count').innerText = player.quarks;
                 update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health, quarks: player.quarks });
             } else { window.showNeonToast("Треба більше Кварків!", "red"); }
         };
 
-        window.forceStartGame = () => {
-            // Тепер можна нажати під час очікування і під час 30-секундного відліку
-            if(isHost() && (roomState === 'waiting' || roomState === 'counting')) {
-                update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 3000 });
-            }
-        };
+        window.forceStartGame = () => { if(isHost() && (roomState === 'waiting' || roomState === 'counting')) { update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 3000 }); } };
 
-        function resizeCanvas() {
-            const size = Math.min(window.innerWidth, window.innerHeight);
-            canvas.width = size; canvas.height = size; CELL_SIZE = canvas.width / GRID_SIZE;
-        }
+        function resizeCanvas() { const size = Math.min(window.innerWidth, window.innerHeight); canvas.width = size; canvas.height = size; CELL_SIZE = canvas.width / GRID_SIZE; }
 
         function startGame() {
             window.addEventListener('resize', resizeCanvas); resizeCanvas();
@@ -343,8 +350,7 @@
 
             onValue(ref(db, `lobbies/${currentLobbyId}`), (snap) => {
                 if(!snap.exists()) return; const data = snap.val();
-                if(data.roomState) roomState = data.roomState;
-                if(data.countDownEnd) countDownEnd = data.countDownEnd;
+                if(data.roomState) roomState = data.roomState; if(data.countDownEnd) countDownEnd = data.countDownEnd;
             });
 
             const playersRef = ref(db, `lobbies/${currentLobbyId}/players`);
@@ -373,8 +379,7 @@
             if (roomState !== 'playing' || !player.alive) return;
             let aliveEnemies = 0; for (const id in enemies) { if (enemies[id].alive) aliveEnemies++; }
             if (aliveEnemies === 0 && Object.keys(enemies).length > 0) {
-                window.showNeonToast("👑 ПЕРЕМОГА! ТИ ОСТАННІЙ!", 'green');
-                setTimeout(() => window.leaveGame(), 4000);
+                window.showNeonToast("👑 ПЕРЕМОГА! ТИ ОСТАННІЙ!", 'green'); setTimeout(() => window.leaveGame(), 4000);
             }
         }
 
@@ -394,8 +399,7 @@
 
             if (!player.alive) return;
             if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
-                player.health -= bullet.damage; document.getElementById('hp-count').innerText = player.health;
-                playSfx('hit');
+                player.health -= bullet.damage; document.getElementById('hp-count').innerText = player.health; playSfx('hit');
                 if (player.health <= 0) {
                     player.health = 0; player.alive = false; document.getElementById('hp-count').innerText = "0";
                     update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: 0, alive: false });
@@ -405,7 +409,6 @@
             }
         }
 
-        // --- УПРАВЛІННЯ ДЖОЙСТИКОМ І КЛАВІАТУРОЮ ---
         const keys = { w: false, a: false, s: false, d: false, space: false };
         window.addEventListener('keydown', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=true; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=true; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=true; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=true; if(e.code==='Space')keys.space=true; });
         window.addEventListener('keyup', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=false; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=false; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=false; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=false; if(e.code==='Space')keys.space=false; });
@@ -422,21 +425,11 @@
             let dist = Math.sqrt(dx*dx + dy*dy); let maxDist = 35;
             if(dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
             joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
-
             keys.w = keys.a = keys.s = keys.d = false;
-            if (dist > 10) {
-                if(Math.abs(dx) > Math.abs(dy)) { if(dx > 0) keys.d = true; else keys.a = true; } 
-                else { if(dy > 0) keys.s = true; else keys.w = true; }
-            }
+            if (dist > 10) { if(Math.abs(dx) > Math.abs(dy)) { if(dx > 0) keys.d = true; else keys.a = true; } else { if(dy > 0) keys.s = true; else keys.w = true; } }
         }
 
-        joyZone.addEventListener('touchstart', (e) => {
-            e.preventDefault(); joyActive = true;
-            let rect = joyZone.getBoundingClientRect();
-            joyOrigin = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
-            processJoystickTouch(e.touches[0]);
-        }, {passive: false});
-
+        joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joyActive = true; let rect = joyZone.getBoundingClientRect(); joyOrigin = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 }; processJoystickTouch(e.touches[0]); }, {passive: false});
         joyZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(joyActive) processJoystickTouch(e.touches[0]); }, {passive: false});
         joyZone.addEventListener('touchend', (e) => { e.preventDefault(); joyActive = false; joyStick.style.transform = `translate(0px, 0px)`; keys.w = keys.a = keys.s = keys.d = false; }, {passive: false});
 
@@ -445,16 +438,12 @@
             let totalPlayers = Object.keys(enemies).length + 1;
             
             if(roomState === 'waiting') {
-                if(totalPlayers >= 2) {
-                    document.getElementById('host-btn').style.display = 'block';
-                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 30000 });
-                } else { document.getElementById('host-btn').style.display = 'none'; }
+                if(totalPlayers >= 2) { document.getElementById('host-btn').style.display = 'block'; update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 30000 }); } else { document.getElementById('host-btn').style.display = 'none'; }
             } else if (roomState === 'counting') {
                 document.getElementById('host-btn').style.display = 'block';
                 if(totalPlayers < 2) { update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' }); } 
                 else if (Date.now() >= countDownEnd) {
-                    document.getElementById('host-btn').style.display = 'none';
-                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
+                    document.getElementById('host-btn').style.display = 'none'; update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
                     for(let i=0; i<20; i++) set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
                     hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 5000));
                     hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 30000));
@@ -475,9 +464,7 @@
 
                 if (moved) {
                     let canMove = true;
-                    for(let sid in structures) {
-                        if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) { canMove = false; break; }
-                    }
+                    for(let sid in structures) { if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) { canMove = false; break; } }
 
                     if(canMove) {
                         player.x = newX; player.y = newY; lastMove = now;
@@ -485,8 +472,7 @@
                             for (const id in items) {
                                 if (items[id].x === player.x && items[id].y === player.y) {
                                     player.quarks += (items[id].type === 'mega' ? 5 : 1); document.getElementById('quark-count').innerText = player.quarks;
-                                    remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); 
-                                    playSfx('coin');
+                                    remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); playSfx('coin');
                                 }
                             }
                         }
@@ -505,8 +491,7 @@
                 const bInterval = setInterval(() => {
                     if (bulletData.dir === 'up') by--; if (bulletData.dir === 'down') by++;
                     if (bulletData.dir === 'left') bx--; if (bulletData.dir === 'right') bx++;
-                    if (bx < 0 || bx >= GRID_SIZE || by < 0 || by >= GRID_SIZE) {
-                        clearInterval(bInterval); remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
+                    if (bx < 0 || bx >= GRID_SIZE || by < 0 || by >= GRID_SIZE) { clearInterval(bInterval); remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
                     } else { update(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), { x: bx, y: by }); }
                 }, 80); 
             }
