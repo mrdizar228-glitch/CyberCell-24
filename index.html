@@ -38,26 +38,37 @@
         .hud-text { color: var(--accent-green); text-shadow: 0 0 3px var(--accent-green); margin: 5px 0; }
         #host-btn { display: none; margin-top: 10px; pointer-events: auto; color: var(--accent-yellow); border-color: var(--accent-yellow); }
         
-        #upgrade-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px; width: 320px; pointer-events: auto; display: none; z-index: 100; }
-        #upgrade-menu h2 { color: var(--accent-green); text-align: center; margin-top: 0; text-shadow: 0 0 5px var(--accent-green); }
+        /* МЕНЮ МАГАЗИНУ ТА НАЛАШТУВАНЬ */
+        .modal-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 16, 24, 0.95); border: 1px solid var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 20px; width: 320px; pointer-events: auto; display: none; z-index: 100; }
+        .modal-menu h2 { color: var(--accent-green); text-align: center; margin-top: 0; text-shadow: 0 0 5px var(--accent-green); }
         .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; }
         .build-btn { color: #00E5FF; border-color: #00E5FF; box-shadow: 0 0 5px rgba(0, 229, 255, 0.2); }
         
-        .mobile-controls { position: absolute; bottom: 30px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
-        .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; pointer-events: auto; }
-        .d-btn { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--accent-green); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; user-select: none; cursor: pointer; }
-        .d-btn:active { background: rgba(0, 255, 65, 0.4); }
-        .d-up { grid-column: 2; grid-row: 1; } .d-left { grid-column: 1; grid-row: 2; } .d-right { grid-column: 3; grid-row: 2; } .d-down { grid-column: 2; grid-row: 3; }
-        .action-btns { display: flex; align-items: flex-end; gap: 10px; pointer-events: auto; }
+        .settings-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .settings-row label { color: var(--accent-green); }
+        input[type=range] { accent-color: var(--accent-green); width: 100%; }
+
+        .mobile-controls { position: absolute; bottom: 30px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px; box-sizing: border-box; }
+        
+        /* ДЖОЙСТИК */
+        #joystick-zone { width: 120px; height: 120px; background: rgba(0, 255, 65, 0.1); border: 2px solid var(--accent-green); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2); }
+        #joystick-stick { width: 50px; height: 50px; background: var(--accent-green); border-radius: 50%; position: absolute; top: 33px; left: 33px; pointer-events: none; box-shadow: 0 0 15px var(--accent-green); transition: transform 0.05s linear; }
+
+        .action-btns { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; align-items: flex-end; }
+        .top-action-row { display: flex; gap: 10px; }
         .menu-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; }
-        .fire-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,0,60,0.1); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .fire-btn { width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; background: rgba(255,0,60,0.1); color: var(--accent-red); border: 2px solid var(--accent-red); font-size: 14px; font-weight: bold; box-shadow: 0 0 10px rgba(255,0,60,0.3); }
         .fire-btn:active { background: rgba(255,0,60,0.4); }
-        #leave-btn { position: absolute; top: 10px; right: 10px; pointer-events: auto;}
+        
+        #top-right-btns { position: absolute; top: 10px; right: 10px; pointer-events: auto; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
 
     <div id="toast-container"></div>
+    <div id="yt-player-container" style="position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none;">
+        <div id="yt-player"></div>
+    </div>
 
     <div id="lobby-screen">
         <h1>CYBERCELL BATTLE ROYALE</h1>
@@ -81,12 +92,15 @@
             <div class="hud-text">Quarks: <span id="quark-count">0</span></div>
             <button id="host-btn" onclick="forceStartGame()">START NOW</button>
         </div>
-        <button id="leave-btn" class="red-btn" onclick="leaveGame()">ВИЙТИ</button>
+        <div id="top-right-btns">
+            <button class="menu-btn" style="border-radius: 4px;" onclick="toggleSettings()">⚙️</button>
+            <button class="red-btn" onclick="leaveGame()">ВИЙТИ</button>
+        </div>
 
-        <div id="upgrade-menu">
+        <div id="upgrade-menu" class="modal-menu">
             <h2>SHOP / BUILD</h2>
-            <div class="upgrade-row"><span>Wall (Стіна)</span><button class="build-btn" onclick="buyUpgrade('wall')">5 Q</button></div>
-            <div class="upgrade-row"><span>Miner (Майнер)</span><button class="build-btn" onclick="buyUpgrade('miner')">25 Q</button></div>
+            <div class="upgrade-row"><span>Wall</span><button class="build-btn" onclick="buyUpgrade('wall')">5 Q</button></div>
+            <div class="upgrade-row"><span>Miner</span><button class="build-btn" onclick="buyUpgrade('miner')">25 Q</button></div>
             <hr style="border-color:#333">
             <div class="upgrade-row"><span>Speed Boost</span><button onclick="buyUpgrade('speed')">10 Q</button></div>
             <div class="upgrade-row"><span>Faster Fire</span><button onclick="buyUpgrade('fireRate')">15 Q</button></div>
@@ -95,10 +109,25 @@
             <button onclick="toggleMenu()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
         </div>
 
+        <div id="settings-menu" class="modal-menu">
+            <h2>SETTINGS</h2>
+            <div class="settings-row">
+                <label>Effects volume</label>
+                <input type="range" id="sfx-vol" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <div class="settings-row">
+                <button id="music-toggle-btn" onclick="toggleMusic()">Music: OFF</button>
+            </div>
+            <div class="settings-row" id="music-vol-container" style="display: none;">
+                <label>Music volume</label>
+                <input type="range" id="music-vol" min="0" max="100" step="1" value="50">
+            </div>
+            <button onclick="toggleSettings()" style="width: 100%; margin-top: 10px;" class="red-btn">CLOSE</button>
+        </div>
+
         <div class="mobile-controls">
-            <div class="d-pad">
-                <div class="d-btn d-up" id="btn-up">W</div><div class="d-btn d-left" id="btn-left">A</div>
-                <div class="d-btn d-right" id="btn-right">D</div><div class="d-btn d-down" id="btn-down">S</div>
+            <div id="joystick-zone">
+                <div id="joystick-stick"></div>
             </div>
             <div class="action-btns">
                 <button class="menu-btn" onclick="toggleMenu()">SHOP</button>
@@ -107,9 +136,10 @@
         </div>
     </div>
 
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // ОСЬ ТУТ БУЛА ПОМИЛКА: Я ДОДАВ "get" В СПИСОК ІМПОРТІВ!
         import { getDatabase, ref, set, get, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
@@ -118,34 +148,65 @@
             storageBucket: "cybercell-24.firebasestorage.app", messagingSenderId: "1095428474585", appId: "1:1095428474585:web:b5e1b5447656957c77a0c8"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
+        // --- ЗВУКОВІ ЕФЕКТИ ТА МУЗИКА ---
+        const sounds = {
+            shoot: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/pew.mp3'),
+            hit: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/hit.mp3'),
+            coin: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/coin.mp3'),
+            build: new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/32966/pop.mp3')
+        };
+        
+        window.playSfx = (name) => {
+            let vol = parseFloat(document.getElementById('sfx-vol').value);
+            if (vol > 0 && sounds[name]) {
+                let s = sounds[name].cloneNode();
+                s.volume = vol;
+                s.play().catch(e=>{});
+            }
+        };
+
+        let ytPlayer;
+        window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '10', width: '10', videoId: 'hrgzWEgCCFg',
+                playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'hrgzWEgCCFg' }
+            });
+        };
+
+        let isMusicOn = false;
+        window.toggleMusic = () => {
+            isMusicOn = !isMusicOn;
+            const btn = document.getElementById('music-toggle-btn');
+            const volCont = document.getElementById('music-vol-container');
+            if(isMusicOn) {
+                btn.innerText = "Music: ON"; volCont.style.display = "flex";
+                if(ytPlayer && ytPlayer.playVideo) {
+                    ytPlayer.setVolume(document.getElementById('music-vol').value);
+                    ytPlayer.playVideo();
+                }
+            } else {
+                btn.innerText = "Music: OFF"; volCont.style.display = "none";
+                if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+            }
+        };
+        document.getElementById('music-vol').addEventListener('input', (e) => {
+            if(ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(e.target.value);
+        });
+
+        // --- ОСНОВНА ЛОГІКА ---
         const ALL_COLORS = ['#FF003C', '#00E5FF', '#FCE803', '#B800FF', '#FF8C00', '#00FF41', '#FF00FF', '#FFFFFF', '#00FA9A', '#FF1493'];
-        
-        let currentLobbyId = null;
-        let isPlayingInLobby = false; 
-        let roomState = 'waiting'; 
-        let countDownEnd = 0;
-        
-        let animationFrameId;
-        let hostIntervals = [];
-        let myMinerIntervals = {};
-        const GRID_SIZE = 24;
-        let CELL_SIZE = 0;
+        let currentLobbyId = null; let isPlayingInLobby = false; let roomState = 'waiting'; let countDownEnd = 0;
+        let animationFrameId; let hostIntervals = []; let myMinerIntervals = {};
+        const GRID_SIZE = 24; let CELL_SIZE = 0;
         
         const shortPlayerId = "User_" + Math.floor(Math.random() * 9999);
         const playerId = "player_" + Math.random().toString(36).substr(2, 9);
         
-        let player = {
-            name: shortPlayerId, x: 0, y: 0, health: 100, quarks: 0, facing: 'up', alive: true,
-            stats: { speedMs: 200, fireRateMs: 500, damage: 20 },
-            joinTime: Date.now(), color: '#00FF41' 
-        };
-
+        let player = { name: shortPlayerId, x: 0, y: 0, health: 100, quarks: 0, facing: 'up', alive: true, stats: { speedMs: 200, fireRateMs: 500, damage: 20 }, joinTime: Date.now(), color: '#00FF41' };
         let lastMove = 0; let lastShot = 0;
         let enemies = {}; let bullets = {}; let items = {}; let structures = {};
-        
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
 
         window.showNeonToast = (message, type = 'green') => {
@@ -157,8 +218,7 @@
         const lobbiesRef = ref(db, 'lobbies');
         onValue(lobbiesRef, (snapshot) => {
             if(isPlayingInLobby) return; 
-            const lobbies = snapshot.val();
-            const listDiv = document.getElementById('active-lobbies'); listDiv.innerHTML = '';
+            const lobbies = snapshot.val(); const listDiv = document.getElementById('active-lobbies'); listDiv.innerHTML = '';
             if (!lobbies) { listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає кімнат.</p>'; return; }
             for (const [id, data] of Object.entries(lobbies)) {
                 let playerCount = data.players ? Object.keys(data.players).length : 0;
@@ -172,19 +232,15 @@
         window.createNewLobby = () => {
             const nameInput = document.getElementById('new-lobby-name').value || "Арена " + Math.floor(Math.random()*100);
             const newLobbyRef = push(ref(db, 'lobbies'));
-            set(newLobbyRef, { name: nameInput, created: Date.now(), roomState: 'waiting' }).then(() => { 
-                joinLobby(newLobbyRef.key, nameInput);
-            });
+            set(newLobbyRef, { name: nameInput, created: Date.now(), roomState: 'waiting' }).then(() => { joinLobby(newLobbyRef.key, nameInput); });
         };
 
         function getHostId() {
             let all = [{id: playerId, joinTime: player.joinTime}];
             for(let id in enemies) all.push({id: id, joinTime: enemies[id].joinTime});
-            all.sort((a,b) => a.joinTime - b.joinTime);
-            return all[0] ? all[0].id : playerId;
+            all.sort((a,b) => a.joinTime - b.joinTime); return all[0] ? all[0].id : playerId;
         }
         function isHost() { return getHostId() === playerId; }
-
         function getUniqueColor() {
             let usedColors = Object.values(enemies).map(e => e.color);
             for(let c of ALL_COLORS) { if(!usedColors.includes(c)) return c; }
@@ -197,14 +253,9 @@
             canvas.style.display = 'block'; document.getElementById('ui-layer').style.display = 'block';
             document.getElementById('current-room-name').innerText = lobbyName;
             
-            // Завантажуємо дані через get(), який тепер успішно знайдено
             get(ref(db, `lobbies/${currentLobbyId}/players`)).then((snap) => {
-                if(snap.exists()) {
-                    let data = snap.val();
-                    for(let k in data) if(k !== playerId) enemies[k] = data[k];
-                }
-                player.color = getUniqueColor();
-                startGame();
+                if(snap.exists()) { let data = snap.val(); for(let k in data) if(k !== playerId) enemies[k] = data[k]; }
+                player.color = getUniqueColor(); startGame();
             });
         };
 
@@ -219,7 +270,14 @@
 
         window.toggleMenu = () => {
             if(roomState !== 'playing') { window.showNeonToast("Магазин закритий до початку гри!", "yellow"); return; }
+            document.getElementById('settings-menu').style.display = 'none';
             const menu = document.getElementById('upgrade-menu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        };
+
+        window.toggleSettings = () => {
+            document.getElementById('upgrade-menu').style.display = 'none';
+            const menu = document.getElementById('settings-menu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         };
 
@@ -232,43 +290,39 @@
             if (player.quarks >= cost) {
                 if (type === 'wall' || type === 'miner') {
                     for(let id in structures) {
-                        if(structures[id].x === player.x && structures[id].y === player.y) {
-                            window.showNeonToast("Тут вже щось побудовано!", "red"); return;
-                        }
+                        if(structures[id].x === player.x && structures[id].y === player.y) { window.showNeonToast("Тут вже щось побудовано!", "red"); return; }
                     }
                     player.quarks -= cost;
                     const sid = "s_" + Date.now();
-                    set(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), {
-                        ownerId: playerId, type: type, x: player.x, y: player.y, color: player.color, hp: (type==='wall'?4:2)
-                    });
+                    set(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), { ownerId: playerId, type: type, x: player.x, y: player.y, color: player.color, hp: (type==='wall'?4:2) });
+                    playSfx('build');
                     
                     if(type === 'miner') {
                         window.showNeonToast("Майнер встановлено!", "green");
                         myMinerIntervals[sid] = setInterval(() => {
                             if(player.alive && roomState === 'playing') {
-                                player.quarks += 1;
-                                document.getElementById('quark-count').innerText = player.quarks;
+                                player.quarks += 1; document.getElementById('quark-count').innerText = player.quarks;
                                 update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { quarks: player.quarks });
+                                playSfx('coin'); // Тихий звук збору з майнера
                             }
                         }, 3000);
-                    } else {
-                        window.showNeonToast("Стіну встановлено!", "green");
-                    }
+                    } else { window.showNeonToast("Стіну встановлено!", "green"); }
                 } else {
                     player.quarks -= cost;
                     if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість +", "green"); }
                     if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Стрільба +", "green"); }
                     if (type === 'damage') { player.stats.damage += 10; window.showNeonToast("Урон +", "green"); }
                     if (type === 'health') { player.health = Math.min(100, player.health + 25); document.getElementById('hp-count').innerText = player.health; window.showNeonToast("Хілл +", "green"); }
+                    playSfx('build');
                 }
-                
                 document.getElementById('quark-count').innerText = player.quarks;
                 update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: player.health, quarks: player.quarks });
             } else { window.showNeonToast("Треба більше Кварків!", "red"); }
         };
 
         window.forceStartGame = () => {
-            if(isHost() && roomState === 'waiting') {
+            // Тепер можна нажати під час очікування і під час 30-секундного відліку
+            if(isHost() && (roomState === 'waiting' || roomState === 'counting')) {
                 update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 3000 });
             }
         };
@@ -288,8 +342,7 @@
             set(playerRef, player); onDisconnect(playerRef).remove();
 
             onValue(ref(db, `lobbies/${currentLobbyId}`), (snap) => {
-                if(!snap.exists()) return;
-                const data = snap.val();
+                if(!snap.exists()) return; const data = snap.val();
                 if(data.roomState) roomState = data.roomState;
                 if(data.countDownEnd) countDownEnd = data.countDownEnd;
             });
@@ -311,10 +364,7 @@
             const structRef = ref(db, `lobbies/${currentLobbyId}/structures`);
             onChildAdded(structRef, (snap) => { structures[snap.key] = snap.val(); });
             onChildChanged(structRef, (snap) => { structures[snap.key] = snap.val(); });
-            onChildRemoved(structRef, (snap) => { 
-                delete structures[snap.key]; 
-                if(myMinerIntervals[snap.key]) { clearInterval(myMinerIntervals[snap.key]); delete myMinerIntervals[snap.key]; }
-            });
+            onChildRemoved(structRef, (snap) => { delete structures[snap.key]; if(myMinerIntervals[snap.key]) { clearInterval(myMinerIntervals[snap.key]); delete myMinerIntervals[snap.key]; } });
 
             gameLoop();
         }
@@ -337,7 +387,7 @@
                         if(hp <= 0) remove(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`));
                         else update(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), {hp: hp});
                         remove(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`));
-                        return;
+                        playSfx('hit'); return;
                     }
                 }
             }
@@ -345,6 +395,7 @@
             if (!player.alive) return;
             if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
                 player.health -= bullet.damage; document.getElementById('hp-count').innerText = player.health;
+                playSfx('hit');
                 if (player.health <= 0) {
                     player.health = 0; player.alive = false; document.getElementById('hp-count').innerText = "0";
                     update(ref(db, `lobbies/${currentLobbyId}/players/${playerId}`), { health: 0, alive: false });
@@ -354,57 +405,66 @@
             }
         }
 
+        // --- УПРАВЛІННЯ ДЖОЙСТИКОМ І КЛАВІАТУРОЮ ---
         const keys = { w: false, a: false, s: false, d: false, space: false };
         window.addEventListener('keydown', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=true; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=true; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=true; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=true; if(e.code==='Space')keys.space=true; });
         window.addEventListener('keyup', (e) => { if(e.code==='KeyW'||e.code==='ArrowUp')keys.w=false; if(e.code==='KeyA'||e.code==='ArrowLeft')keys.a=false; if(e.code==='KeyS'||e.code==='ArrowDown')keys.s=false; if(e.code==='KeyD'||e.code==='ArrowRight')keys.d=false; if(e.code==='Space')keys.space=false; });
-        const bindBtn = (id, key) => { const btn = document.getElementById(id); btn.addEventListener('touchstart', (e)=>{e.preventDefault();keys[key]=true;},{passive:false}); btn.addEventListener('touchend', (e)=>{e.preventDefault();keys[key]=false;},{passive:false}); btn.addEventListener('mousedown', (e)=>{e.preventDefault();keys[key]=true;}); btn.addEventListener('mouseup', (e)=>{e.preventDefault();keys[key]=false;}); btn.addEventListener('mouseleave', (e)=>{e.preventDefault();keys[key]=false;}); };
-        bindBtn('btn-up','w');bindBtn('btn-down','s');bindBtn('btn-left','a');bindBtn('btn-right','d');bindBtn('btn-fire','space');
+        
+        const btnFire = document.getElementById('btn-fire');
+        btnFire.addEventListener('touchstart', (e)=>{e.preventDefault();keys.space=true;},{passive:false}); btnFire.addEventListener('touchend', (e)=>{e.preventDefault();keys.space=false;},{passive:false});
+        btnFire.addEventListener('mousedown', (e)=>{e.preventDefault();keys.space=true;}); btnFire.addEventListener('mouseup', (e)=>{e.preventDefault();keys.space=false;}); btnFire.addEventListener('mouseleave', (e)=>{e.preventDefault();keys.space=false;});
+        
+        const joyZone = document.getElementById('joystick-zone'); const joyStick = document.getElementById('joystick-stick');
+        let joyActive = false; let joyOrigin = {x:0, y:0};
+
+        function processJoystickTouch(touch) {
+            let dx = touch.clientX - joyOrigin.x; let dy = touch.clientY - joyOrigin.y;
+            let dist = Math.sqrt(dx*dx + dy*dy); let maxDist = 35;
+            if(dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+            joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+
+            keys.w = keys.a = keys.s = keys.d = false;
+            if (dist > 10) {
+                if(Math.abs(dx) > Math.abs(dy)) { if(dx > 0) keys.d = true; else keys.a = true; } 
+                else { if(dy > 0) keys.s = true; else keys.w = true; }
+            }
+        }
+
+        joyZone.addEventListener('touchstart', (e) => {
+            e.preventDefault(); joyActive = true;
+            let rect = joyZone.getBoundingClientRect();
+            joyOrigin = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+            processJoystickTouch(e.touches[0]);
+        }, {passive: false});
+
+        joyZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(joyActive) processJoystickTouch(e.touches[0]); }, {passive: false});
+        joyZone.addEventListener('touchend', (e) => { e.preventDefault(); joyActive = false; joyStick.style.transform = `translate(0px, 0px)`; keys.w = keys.a = keys.s = keys.d = false; }, {passive: false});
 
         function hostLogicManager() {
-            if(!isHost()) { 
-                document.getElementById('host-btn').style.display = 'none'; 
-                hostIntervals.forEach(i => clearInterval(i)); hostIntervals = []; 
-                return; 
-            }
-
+            if(!isHost()) { document.getElementById('host-btn').style.display = 'none'; hostIntervals.forEach(i => clearInterval(i)); hostIntervals = []; return; }
             let totalPlayers = Object.keys(enemies).length + 1;
             
             if(roomState === 'waiting') {
                 if(totalPlayers >= 2) {
                     document.getElementById('host-btn').style.display = 'block';
                     update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 30000 });
-                } else {
-                    document.getElementById('host-btn').style.display = 'none';
-                }
+                } else { document.getElementById('host-btn').style.display = 'none'; }
             } else if (roomState === 'counting') {
                 document.getElementById('host-btn').style.display = 'block';
-                if(totalPlayers < 2) {
-                    update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' });
-                } else if (Date.now() >= countDownEnd) {
+                if(totalPlayers < 2) { update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' }); } 
+                else if (Date.now() >= countDownEnd) {
                     document.getElementById('host-btn').style.display = 'none';
                     update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
-                    
-                    for(let i=0; i<20; i++) {
-                        set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
-                    }
-                    
-                    hostIntervals.push(setInterval(() => {
-                        set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
-                    }, 5000));
-                    
-                    hostIntervals.push(setInterval(() => {
-                        set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
-                    }, 30000));
+                    for(let i=0; i<20; i++) set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
+                    hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 5000));
+                    hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 30000));
                 }
-            } else if (roomState === 'playing') {
-                document.getElementById('host-btn').style.display = 'none';
-            }
+            } else if (roomState === 'playing') { document.getElementById('host-btn').style.display = 'none'; }
         }
 
         function updateGame() {
             if (!player.alive) return;
-            hostLogicManager();
-            const now = Date.now();
+            hostLogicManager(); const now = Date.now();
 
             if (now - lastMove > player.stats.speedMs) {
                 let moved = false; let newX = player.x; let newY = player.y;
@@ -416,9 +476,7 @@
                 if (moved) {
                     let canMove = true;
                     for(let sid in structures) {
-                        if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) {
-                            canMove = false; break;
-                        }
+                        if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) { canMove = false; break; }
                     }
 
                     if(canMove) {
@@ -426,9 +484,9 @@
                         if(roomState === 'playing') {
                             for (const id in items) {
                                 if (items[id].x === player.x && items[id].y === player.y) {
-                                    player.quarks += (items[id].type === 'mega' ? 5 : 1);
-                                    document.getElementById('quark-count').innerText = player.quarks;
+                                    player.quarks += (items[id].type === 'mega' ? 5 : 1); document.getElementById('quark-count').innerText = player.quarks;
                                     remove(ref(db, `lobbies/${currentLobbyId}/items/${id}`)); 
+                                    playSfx('coin');
                                 }
                             }
                         }
@@ -438,7 +496,7 @@
             }
 
             if (keys.space && roomState === 'playing' && now - lastShot > player.stats.fireRateMs) {
-                lastShot = now;
+                lastShot = now; playSfx('shoot');
                 const bulletId = "b_" + Date.now();
                 const bulletData = { ownerId: playerId, x: player.x, y: player.y, dir: player.facing, damage: player.stats.damage };
                 set(ref(db, `lobbies/${currentLobbyId}/bullets/${bulletId}`), bulletData);
@@ -466,18 +524,11 @@
             for(let sid in structures) {
                 const s = structures[sid];
                 if(s.type === 'wall') {
-                    ctx.fillStyle = s.color + "40"; ctx.strokeStyle = s.color; ctx.lineWidth = 2;
-                    ctx.shadowBlur = 10; ctx.shadowColor = s.color;
-                    ctx.fillRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                    ctx.strokeRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = s.color + "40"; ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = s.color;
+                    ctx.fillRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE); ctx.strokeRect(s.x * CELL_SIZE, s.y * CELL_SIZE, CELL_SIZE, CELL_SIZE); ctx.shadowBlur = 0;
                 } else if (s.type === 'miner') {
-                    ctx.fillStyle = s.color + "80"; ctx.strokeStyle = s.color; ctx.lineWidth = 2;
-                    ctx.shadowBlur = 10; ctx.shadowColor = s.color;
-                    ctx.beginPath();
-                    ctx.moveTo(s.x * CELL_SIZE + CELL_SIZE/2, s.y * CELL_SIZE + 2);
-                    ctx.lineTo(s.x * CELL_SIZE + CELL_SIZE - 2, s.y * CELL_SIZE + CELL_SIZE - 2);
-                    ctx.lineTo(s.x * CELL_SIZE + 2, s.y * CELL_SIZE + CELL_SIZE - 2);
+                    ctx.fillStyle = s.color + "80"; ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = s.color;
+                    ctx.beginPath(); ctx.moveTo(s.x * CELL_SIZE + CELL_SIZE/2, s.y * CELL_SIZE + 2); ctx.lineTo(s.x * CELL_SIZE + CELL_SIZE - 2, s.y * CELL_SIZE + CELL_SIZE - 2); ctx.lineTo(s.x * CELL_SIZE + 2, s.y * CELL_SIZE + CELL_SIZE - 2);
                     ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
                 }
             }
@@ -489,61 +540,41 @@
             }
 
             function drawPlayer(pData, isMe) {
-                if(!pData.alive) return;
-                const color = pData.color;
-                ctx.fillStyle = color + "33"; ctx.strokeStyle = color; ctx.lineWidth = 2;
-                ctx.shadowBlur = 10; ctx.shadowColor = color;
-                ctx.fillRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                ctx.strokeRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                if(!pData.alive) return; const color = pData.color;
+                ctx.fillStyle = color + "33"; ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = color;
+                ctx.fillRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4); ctx.strokeRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 
                 if(getHostId() === (isMe ? playerId : Object.keys(enemies).find(k => enemies[k] === pData))) {
                     ctx.beginPath(); ctx.arc(pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE*0.3, 0, Math.PI*2);
                     ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; ctx.fill();
-                } else {
-                    ctx.fillStyle = color; ctx.fillRect(pData.x * CELL_SIZE + CELL_SIZE * 0.3, pData.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); 
-                }
+                } else { ctx.fillStyle = color; ctx.fillRect(pData.x * CELL_SIZE + CELL_SIZE * 0.3, pData.y * CELL_SIZE + CELL_SIZE * 0.3, CELL_SIZE * 0.4, CELL_SIZE * 0.4); }
                 ctx.shadowBlur = 0;
 
-                ctx.fillStyle = "#E0E0E0"; ctx.font = "10px Courier New"; ctx.textAlign = "center";
-                ctx.fillText((isMe ? "Я ("+pData.name+")" : pData.name), pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE - 5);
+                ctx.fillStyle = "#E0E0E0"; ctx.font = "10px Courier New"; ctx.textAlign = "center"; ctx.fillText((isMe ? "Я ("+pData.name+")" : pData.name), pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE - 5);
                 ctx.fillStyle = "red"; ctx.fillRect(pData.x * CELL_SIZE, pData.y * CELL_SIZE - 2, CELL_SIZE, 3);
                 ctx.fillStyle = "#00FF41"; ctx.fillRect(pData.x * CELL_SIZE, pData.y * CELL_SIZE - 2, CELL_SIZE * (pData.health / 100), 3);
             }
 
-            for (const id in enemies) drawPlayer(enemies[id], false);
-            drawPlayer(player, true);
+            for (const id in enemies) drawPlayer(enemies[id], false); drawPlayer(player, true);
 
             for (const id in bullets) {
                 const b = bullets[id]; const cx = b.x * CELL_SIZE + CELL_SIZE / 2; const cy = b.y * CELL_SIZE + CELL_SIZE / 2;
                 const color = b.ownerId === playerId ? player.color : (enemies[b.ownerId] ? enemies[b.ownerId].color : '#FFF');
-                ctx.beginPath(); ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2);
-                ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+                ctx.beginPath(); ctx.arc(cx, cy, CELL_SIZE * 0.15, 0, Math.PI * 2); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
             }
 
             if(roomState === 'waiting') {
                 ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
-                ctx.fillText("ОЧІКУВАННЯ ГРАВЦІВ...", canvas.width/2, canvas.height/2);
+                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center"; ctx.fillText("ОЧІКУВАННЯ ГРАВЦІВ...", canvas.width/2, canvas.height/2);
             } else if (roomState === 'counting') {
-                let left = Math.ceil((countDownEnd - Date.now()) / 1000);
-                if(left < 0) left = 0;
-                
-                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
-                ctx.fillText(`Гра почнеться через: ${left}с`, canvas.width/2, canvas.height - 100);
-
+                let left = Math.ceil((countDownEnd - Date.now()) / 1000); if(left < 0) left = 0;
+                ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center"; ctx.fillText(`Гра почнеться через: ${left}с`, canvas.width/2, canvas.height - 100);
                 if(left <= 3 && left > 0) {
-                    ctx.font = "120px Courier New";
-                    if(left === 3) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; }
-                    if(left === 2) { ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; }
-                    if(left === 1) { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
+                    ctx.font = "120px Courier New"; if(left === 3) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; } if(left === 2) { ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; } if(left === 1) { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
                     ctx.shadowBlur = 20; ctx.fillText(left, canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0;
-                } else if (left === 0) {
-                    ctx.font = "120px Courier New"; ctx.fillStyle = "#FFFFFF"; ctx.shadowColor = "#FFFFFF"; ctx.shadowBlur = 20;
-                    ctx.fillText("GO!", canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0;
-                }
+                } else if (left === 0) { ctx.font = "120px Courier New"; ctx.fillStyle = "#FFFFFF"; ctx.shadowColor = "#FFFFFF"; ctx.shadowBlur = 20; ctx.fillText("GO!", canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0; }
             }
         }
-
         function gameLoop() { if (isPlayingInLobby) { updateGame(); draw(); } animationFrameId = requestAnimationFrame(gameLoop); }
     </script>
 </body>
