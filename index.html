@@ -109,7 +109,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        // ОСЬ ТУТ БУЛА ПОМИЛКА: Я ДОДАВ "get" В СПИСОК ІМПОРТІВ!
+        import { getDatabase, ref, set, get, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2_0DuI4ftT615ywcUgsC3r-dZFINW7u8", authDomain: "cybercell-24.firebaseapp.com",
@@ -123,8 +124,8 @@
         const ALL_COLORS = ['#FF003C', '#00E5FF', '#FCE803', '#B800FF', '#FF8C00', '#00FF41', '#FF00FF', '#FFFFFF', '#00FA9A', '#FF1493'];
         
         let currentLobbyId = null;
-        let isPlayingInLobby = false; // Чи ми взагалі в кімнаті
-        let roomState = 'waiting'; // waiting, counting, playing
+        let isPlayingInLobby = false; 
+        let roomState = 'waiting'; 
         let countDownEnd = 0;
         
         let animationFrameId;
@@ -139,7 +140,7 @@
         let player = {
             name: shortPlayerId, x: 0, y: 0, health: 100, quarks: 0, facing: 'up', alive: true,
             stats: { speedMs: 200, fireRateMs: 500, damage: 20 },
-            joinTime: Date.now(), color: '#00FF41' // Дефолт, зміниться при вході
+            joinTime: Date.now(), color: '#00FF41' 
         };
 
         let lastMove = 0; let lastShot = 0;
@@ -155,7 +156,7 @@
 
         const lobbiesRef = ref(db, 'lobbies');
         onValue(lobbiesRef, (snapshot) => {
-            if(isPlayingInLobby) return; // Не оновлюємо лобі, якщо ми в грі
+            if(isPlayingInLobby) return; 
             const lobbies = snapshot.val();
             const listDiv = document.getElementById('active-lobbies'); listDiv.innerHTML = '';
             if (!lobbies) { listDiv.innerHTML = '<p style="color: gray; text-align: center;">Немає кімнат.</p>'; return; }
@@ -176,7 +177,6 @@
             });
         };
 
-        // Логіка Головного (Host)
         function getHostId() {
             let all = [{id: playerId, joinTime: player.joinTime}];
             for(let id in enemies) all.push({id: id, joinTime: enemies[id].joinTime});
@@ -197,7 +197,7 @@
             canvas.style.display = 'block'; document.getElementById('ui-layer').style.display = 'block';
             document.getElementById('current-room-name').innerText = lobbyName;
             
-            // Спочатку завантажимо ворогів щоб вибрати колір
+            // Завантажуємо дані через get(), який тепер успішно знайдено
             get(ref(db, `lobbies/${currentLobbyId}/players`)).then((snap) => {
                 if(snap.exists()) {
                     let data = snap.val();
@@ -230,14 +230,12 @@
             if (type === 'damage') cost = 20; if (type === 'health') cost = 10;
 
             if (player.quarks >= cost) {
-                // Перевірка для будівель (чи вільна клітинка)
                 if (type === 'wall' || type === 'miner') {
                     for(let id in structures) {
                         if(structures[id].x === player.x && structures[id].y === player.y) {
                             window.showNeonToast("Тут вже щось побудовано!", "red"); return;
                         }
                     }
-                    // Ставимо будівлю
                     player.quarks -= cost;
                     const sid = "s_" + Date.now();
                     set(ref(db, `lobbies/${currentLobbyId}/structures/${sid}`), {
@@ -246,7 +244,6 @@
                     
                     if(type === 'miner') {
                         window.showNeonToast("Майнер встановлено!", "green");
-                        // Запускаємо локальний таймер прибутку
                         myMinerIntervals[sid] = setInterval(() => {
                             if(player.alive && roomState === 'playing') {
                                 player.quarks += 1;
@@ -258,7 +255,6 @@
                         window.showNeonToast("Стіну встановлено!", "green");
                     }
                 } else {
-                    // Апгрейди
                     player.quarks -= cost;
                     if (type === 'speed') { player.stats.speedMs = Math.max(50, player.stats.speedMs - 25); window.showNeonToast("Швидкість +", "green"); }
                     if (type === 'fireRate') { player.stats.fireRateMs = Math.max(100, player.stats.fireRateMs - 75); window.showNeonToast("Стрільба +", "green"); }
@@ -291,7 +287,6 @@
             const playerRef = ref(db, `lobbies/${currentLobbyId}/players/${playerId}`);
             set(playerRef, player); onDisconnect(playerRef).remove();
 
-            // Слухаємо стан кімнати
             onValue(ref(db, `lobbies/${currentLobbyId}`), (snap) => {
                 if(!snap.exists()) return;
                 const data = snap.val();
@@ -299,24 +294,20 @@
                 if(data.countDownEnd) countDownEnd = data.countDownEnd;
             });
 
-            // Вороги
             const playersRef = ref(db, `lobbies/${currentLobbyId}/players`);
             onChildAdded(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); });
             onChildChanged(playersRef, (snap) => { if (snap.key !== playerId) enemies[snap.key] = snap.val(); checkWinCondition(); });
             onChildRemoved(playersRef, (snap) => { delete enemies[snap.key]; checkWinCondition(); });
 
-            // Кулі
             const bulletsRef = ref(db, `lobbies/${currentLobbyId}/bullets`);
             onChildAdded(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); });
             onChildChanged(bulletsRef, (snap) => { bullets[snap.key] = snap.val(); checkHit(snap.key, snap.val()); });
             onChildRemoved(bulletsRef, (snap) => { delete bullets[snap.key]; });
 
-            // Предмети
             const itemsRef = ref(db, `lobbies/${currentLobbyId}/items`);
             onChildAdded(itemsRef, (snap) => { items[snap.key] = snap.val(); });
             onChildRemoved(itemsRef, (snap) => { delete items[snap.key]; });
 
-            // Структури
             const structRef = ref(db, `lobbies/${currentLobbyId}/structures`);
             onChildAdded(structRef, (snap) => { structures[snap.key] = snap.val(); });
             onChildChanged(structRef, (snap) => { structures[snap.key] = snap.val(); });
@@ -339,7 +330,6 @@
 
         function checkHit(bulletId, bullet) {
             if (roomState !== 'playing') return;
-            // Перевірка попадання в структури (Робить тільки власник кулі, щоб уникнути багів)
             if (bullet.ownerId === playerId) {
                 for(let sid in structures) {
                     if(structures[sid].x === bullet.x && structures[sid].y === bullet.y) {
@@ -352,7 +342,6 @@
                 }
             }
 
-            // Перевірка попадання в нас
             if (!player.alive) return;
             if (bullet.ownerId !== playerId && bullet.x === player.x && bullet.y === player.y) {
                 player.health -= bullet.damage; document.getElementById('hp-count').innerText = player.health;
@@ -383,7 +372,6 @@
             if(roomState === 'waiting') {
                 if(totalPlayers >= 2) {
                     document.getElementById('host-btn').style.display = 'block';
-                    // Автостарт 30с
                     update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'counting', countDownEnd: Date.now() + 30000 });
                 } else {
                     document.getElementById('host-btn').style.display = 'none';
@@ -393,16 +381,13 @@
                 if(totalPlayers < 2) {
                     update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' });
                 } else if (Date.now() >= countDownEnd) {
-                    // ГРА ПОЧАЛАСЯ
                     document.getElementById('host-btn').style.display = 'none';
                     update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
                     
-                    // Спавн 20 кварків
                     for(let i=0; i<20; i++) {
                         set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
                     }
                     
-                    // Інтервали
                     hostIntervals.push(setInterval(() => {
                         set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
                     }, 5000));
@@ -429,7 +414,6 @@
                 else if (keys.d && player.x < GRID_SIZE - 1) { newX++; player.facing = 'right'; moved = true; }
 
                 if (moved) {
-                    // Перевірка колізії зі стінами (Wall)
                     let canMove = true;
                     for(let sid in structures) {
                         if(structures[sid].type === 'wall' && structures[sid].ownerId !== playerId && structures[sid].x === newX && structures[sid].y === newY) {
@@ -439,7 +423,6 @@
 
                     if(canMove) {
                         player.x = newX; player.y = newY; lastMove = now;
-                        // Збір кварків
                         if(roomState === 'playing') {
                             for (const id in items) {
                                 if (items[id].x === player.x && items[id].y === player.y) {
@@ -480,7 +463,6 @@
                 ctx.beginPath(); ctx.moveTo(0, i * CELL_SIZE); ctx.lineTo(canvas.width, i * CELL_SIZE); ctx.stroke();
             }
 
-            // Малюємо структури
             for(let sid in structures) {
                 const s = structures[sid];
                 if(s.type === 'wall') {
@@ -514,7 +496,6 @@
                 ctx.fillRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 ctx.strokeRect(pData.x * CELL_SIZE + 2, pData.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                 
-                // Якщо це хост - золотий круг
                 if(getHostId() === (isMe ? playerId : Object.keys(enemies).find(k => enemies[k] === pData))) {
                     ctx.beginPath(); ctx.arc(pData.x * CELL_SIZE + CELL_SIZE/2, pData.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE*0.3, 0, Math.PI*2);
                     ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; ctx.fill();
@@ -539,7 +520,6 @@
                 ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
             }
 
-            // Малюємо UI стану кімнати
             if(roomState === 'waiting') {
                 ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,canvas.width,canvas.height);
                 ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
@@ -548,11 +528,9 @@
                 let left = Math.ceil((countDownEnd - Date.now()) / 1000);
                 if(left < 0) left = 0;
                 
-                // Таймер знизу
                 ctx.fillStyle = "#E0E0E0"; ctx.font = "20px Courier New"; ctx.textAlign = "center";
                 ctx.fillText(`Гра почнеться через: ${left}с`, canvas.width/2, canvas.height - 100);
 
-                // Великі цифри по центру
                 if(left <= 3 && left > 0) {
                     ctx.font = "120px Courier New";
                     if(left === 3) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; }
