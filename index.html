@@ -50,6 +50,7 @@
 
         .mobile-controls { position: absolute; bottom: 30px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px; box-sizing: border-box; }
         
+        /* ДЖОЙСТИК */
         #joystick-zone { width: 120px; height: 120px; background: rgba(0, 255, 65, 0.1); border: 2px solid var(--accent-green); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2); }
         #joystick-stick { width: 50px; height: 50px; background: var(--accent-green); border-radius: 50%; position: absolute; top: 33px; left: 33px; pointer-events: none; box-shadow: 0 0 15px var(--accent-green); transition: transform 0.05s linear; }
 
@@ -60,12 +61,16 @@
         
         #top-right-btns { position: absolute; top: 10px; right: 10px; pointer-events: auto; display: flex; gap: 10px; }
         #lobby-settings-btn { position: absolute; top: 10px; right: 10px; z-index: 1001; }
+        
+        /* СХОВАНКА ДЛЯ YOUTUBE */
+        #yt-player-container { position: absolute; left: -9999px; top: 0; width: 300px; height: 300px; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="toast-container"></div>
-    <div id="yt-player-container" style="position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none;">
+    
+    <div id="yt-player-container">
         <div id="yt-player"></div>
     </div>
 
@@ -147,8 +152,7 @@
         };
         const app = initializeApp(firebaseConfig); const db = getDatabase(app);
 
-        // --- ВЛАСНИЙ СИНТЕЗАТОР ЗВУКІВ (WEB AUDIO API) ---
-        // Працює завжди, не вимагає скачування файлів, ідеально для 8-bit ретро ігор.
+        // --- ВЛАСНИЙ СИНТЕЗАТОР ЗВУКІВ ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         function initAudio() { if(!audioCtx) { audioCtx = new AudioContext(); } if(audioCtx.state === 'suspended') { audioCtx.resume(); } }
@@ -160,37 +164,24 @@
 
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
             
             if(type === 'shoot') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(880, now);
-                osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
-                gainNode.gain.setValueAtTime(vol * 0.5, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.type = 'square'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                gainNode.gain.setValueAtTime(vol * 0.5, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             } else if (type === 'hit') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.exponentialRampToValueAtTime(10, now + 0.2);
-                gainNode.gain.setValueAtTime(vol, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.2);
+                gainNode.gain.setValueAtTime(vol, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
                 osc.start(now); osc.stop(now + 0.2);
             } else if (type === 'coin') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1200, now);
-                osc.frequency.setValueAtTime(1600, now + 0.05);
-                gainNode.gain.setValueAtTime(vol * 0.5, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.setValueAtTime(1600, now + 0.05);
+                gainNode.gain.setValueAtTime(vol * 0.5, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'build') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-                gainNode.gain.setValueAtTime(vol * 0.8, now);
-                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(vol * 0.8, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             }
         };
@@ -198,11 +189,11 @@
         // --- YOUTUBE МУЗИКА ---
         let ytPlayer;
         window.onYouTubeIframeAPIReady = function() {
-            ytPlayer = new YT.Player('yt-player', { height: '10', width: '10', videoId: 'hrgzWEgCCFg', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'hrgzWEgCCFg' } });
+            ytPlayer = new YT.Player('yt-player', { height: '300', width: '300', videoId: 'hrgzWEgCCFg', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'hrgzWEgCCFg', 'controls': 0 } });
         };
         let isMusicOn = false;
         window.toggleMusic = () => {
-            initAudio(); // Розм'якшуємо браузер
+            initAudio(); 
             isMusicOn = !isMusicOn;
             const btn = document.getElementById('music-toggle-btn');
             const volCont = document.getElementById('music-vol-container');
@@ -417,6 +408,7 @@
         btnFire.addEventListener('touchstart', (e)=>{e.preventDefault();keys.space=true;},{passive:false}); btnFire.addEventListener('touchend', (e)=>{e.preventDefault();keys.space=false;},{passive:false});
         btnFire.addEventListener('mousedown', (e)=>{e.preventDefault();keys.space=true;}); btnFire.addEventListener('mouseup', (e)=>{e.preventDefault();keys.space=false;}); btnFire.addEventListener('mouseleave', (e)=>{e.preventDefault();keys.space=false;});
         
+        // --- ЗАХИСТ ВІД ЗАЛИПАННЯ ДЖОЙСТИКА ---
         const joyZone = document.getElementById('joystick-zone'); const joyStick = document.getElementById('joystick-stick');
         let joyActive = false; let joyOrigin = {x:0, y:0};
 
@@ -431,10 +423,14 @@
 
         joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joyActive = true; let rect = joyZone.getBoundingClientRect(); joyOrigin = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 }; processJoystickTouch(e.touches[0]); }, {passive: false});
         joyZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(joyActive) processJoystickTouch(e.touches[0]); }, {passive: false});
-        joyZone.addEventListener('touchend', (e) => { e.preventDefault(); joyActive = false; joyStick.style.transform = `translate(0px, 0px)`; keys.w = keys.a = keys.s = keys.d = false; }, {passive: false});
+        
+        // Скидаємо джойстик, навіть якщо палець відпустили за межами екрана
+        window.addEventListener('touchend', (e) => { 
+            if(joyActive) { joyActive = false; joyStick.style.transform = `translate(0px, 0px)`; keys.w = keys.a = keys.s = keys.d = false; }
+        }, {passive: false});
 
         function hostLogicManager() {
-            if(!isHost()) { document.getElementById('host-btn').style.display = 'none'; hostIntervals.forEach(i => clearInterval(i)); hostIntervals = []; return; }
+            if(!isHost()) { document.getElementById('host-btn').style.display = 'none'; return; }
             let totalPlayers = Object.keys(enemies).length + 1;
             
             if(roomState === 'waiting') {
@@ -444,15 +440,22 @@
                 if(totalPlayers < 2) { update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'waiting' }); } 
                 else if (Date.now() >= countDownEnd) {
                     document.getElementById('host-btn').style.display = 'none'; update(ref(db, `lobbies/${currentLobbyId}`), { roomState: 'playing' });
-                    for(let i=0; i<20; i++) set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
-                    hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 5000));
-                    hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 30000));
+                    if(!window.hasSpawnedQuarks) {
+                        window.hasSpawnedQuarks = true;
+                        for(let i=0; i<20; i++) set(ref(db, `lobbies/${currentLobbyId}/items/q_init_${i}_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) });
+                        hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_${Date.now()}`), { type: 'normal', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 5000));
+                        hostIntervals.push(setInterval(() => { set(ref(db, `lobbies/${currentLobbyId}/items/q_mega_${Date.now()}`), { type: 'mega', x: Math.floor(Math.random()*GRID_SIZE), y: Math.floor(Math.random()*GRID_SIZE) }); }, 30000));
+                    }
                 }
             } else if (roomState === 'playing') { document.getElementById('host-btn').style.display = 'none'; }
         }
 
         function updateGame() {
             if (!player.alive) return;
+            
+            // ЗАПОБІЖНИК: якщо таймер 0, змушуємо гру початися локально для кожного
+            if (roomState === 'counting' && Date.now() >= countDownEnd) { roomState = 'playing'; document.getElementById('host-btn').style.display = 'none'; }
+            
             hostLogicManager(); const now = Date.now();
 
             if (now - lastMove > player.stats.speedMs) {
@@ -557,7 +560,7 @@
                 if(left <= 3 && left > 0) {
                     ctx.font = "120px Courier New"; if(left === 3) { ctx.fillStyle = "#00FF41"; ctx.shadowColor = "#00FF41"; } if(left === 2) { ctx.fillStyle = "#FCE803"; ctx.shadowColor = "#FCE803"; } if(left === 1) { ctx.fillStyle = "#FF003C"; ctx.shadowColor = "#FF003C"; }
                     ctx.shadowBlur = 20; ctx.fillText(left, canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0;
-                } else if (left === 0) { ctx.font = "120px Courier New"; ctx.fillStyle = "#FFFFFF"; ctx.shadowColor = "#FFFFFF"; ctx.shadowBlur = 20; ctx.fillText("GO!", canvas.width/2, canvas.height/2 + 40); ctx.shadowBlur = 0; }
+                }
             }
         }
         function gameLoop() { if (isPlayingInLobby) { updateGame(); draw(); } animationFrameId = requestAnimationFrame(gameLoop); }
